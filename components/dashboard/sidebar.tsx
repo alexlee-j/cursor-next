@@ -9,7 +9,6 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: {
     href: string;
     title: string;
-    icon?: React.ReactNode;
   }[];
 }
 
@@ -21,13 +20,7 @@ export function DashboardSidebar({
   const pathname = usePathname();
 
   return (
-    <nav
-      className={cn(
-        "flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1",
-        className
-      )}
-      {...props}
-    >
+    <nav className={cn("flex flex-col space-y-1", className)} {...props}>
       {items.map((item) => (
         <Link
           key={item.href}
@@ -37,10 +30,9 @@ export function DashboardSidebar({
             pathname === item.href
               ? "bg-muted hover:bg-muted"
               : "hover:bg-transparent hover:underline",
-            "justify-start"
+            "justify-start w-full"
           )}
         >
-          {item.icon && <span className="mr-2">{item.icon}</span>}
           {item.title}
         </Link>
       ))}

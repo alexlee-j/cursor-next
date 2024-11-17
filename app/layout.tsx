@@ -24,8 +24,13 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="blog-theme"
+          forcedTheme={undefined}
+          themes={["light", "dark", "system"]}
         >
-          {children}
+          <div className="min-h-screen bg-background font-sans antialiased">
+            {children}
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>
