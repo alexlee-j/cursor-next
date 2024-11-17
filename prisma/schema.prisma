@@ -7,34 +7,187 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 用户表
 model User {
-  id             String              @id @default(cuid())
-  name           String?
-  email          String              @unique
-  password       String
-  isVerified     Boolean             @default(false)
-  isActive       Boolean             @default(true)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  emailVerified  DateTime?
-  verifications  EmailVerification[]
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 关联
+  verifyToken   VerifyToken?
   passwordResets PasswordReset[]
+  sessions      Session[]
+  userRoles     UserRole[]
+  posts         Post[]
+  comments      Comment[]
+
+  @@map("users")
 }
 
-model EmailVerification {
+// 邮箱验证token表
+model VerifyToken {
   id        String   @id @default(cuid())
   token     String   @unique
-  userId    String
-  createdAt DateTime @default(now())
   expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verify_tokens")
 }
 
+// 密码重置表
 model PasswordReset {
   id        String   @id @default(cuid())
   token     String   @unique
-  userId    String
-  createdAt DateTime @default(now())
   expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_requests")
+}
+
+// 会话表
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// 角色表
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  // 关联
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+// 权限表
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  // 关联
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+// 用户角色关联表
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// 角色权限关联表
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// 文章表
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  status    PostStatus @default(DRAFT)
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // 关联
+  comments  Comment[]
+  postTags  PostTag[]
+  analytics Analytics[]
+
+  @@map("posts")
+}
+
+// 评论表
+model Comment {
+  id        String        @id @default(cuid())
+  content   String        @db.Text
+  status    CommentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  postId    String
+  userId    String
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+// 标签表
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  postTags PostTag[]
+
+  @@map("tags")
+}
+
+// 文章标签关联表
+model PostTag {
+  postId String
+  tagId  String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+// 访问统计表
+model Analytics {
+  id             String   @id @default(cuid())
+  date           DateTime @db.Date
+  pageViews      Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  postId         String
+  post           Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("analytics")
+}
+
+// 枚举类型
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

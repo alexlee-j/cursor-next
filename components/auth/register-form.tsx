@@ -15,23 +15,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
+import { useRouter } from "next/navigation";
 
-const formSchema = z
-  .object({
-    email: z.string().email("请输入有效的邮箱地址"),
-    password: z
-      .string()
-      .min(8, "密码至少8个字符")
-      .regex(/[A-Z]/, "密码必须包含大写字母")
-      .regex(/[a-z]/, "密码必须包含小写字母")
-      .regex(/[0-9]/, "密码必须包含数字")
-      .regex(/[^A-Za-z0-9]/, "密码必须包含特殊字符"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "两次输入的密码不一致",
-    path: ["confirmPassword"],
-  });
+const formSchema = z.object({
+  email: z.string().email({
+    message: "请输入有效的邮箱地址",
+  }),
+  password: z
+    .string()
+    .min(6, { message: "密码至少需要6个字符" })
+    .regex(/[A-Za-z]/, { message: "密码必须包含字母" })
+    .regex(/[0-9]/, { message: "密码必须包含数字" }),
+  name: z.string().optional(),
+});
 
 export function RegisterForm() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -39,9 +35,11 @@ export function RegisterForm() {
     defaultValues: {
       email: "",
       password: "",
-      confirmPassword: "",
+      name: "",
     },
   });
+
+  const router = useRouter();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -50,22 +48,21 @@ export function RegisterForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-        }),
+        body: JSON.stringify(values),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "注册失败");
+        throw new Error(data.error || "注册失败");
       }
 
       toast({
         title: "注册成功",
         description: "请查看您的邮箱进行验证",
       });
+
+      router.push(`/verify-email?userId=${data.userId}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -106,12 +103,12 @@ export function RegisterForm() {
         />
         <FormField
           control={form.control}
-          name="confirmPassword"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>确认密码</FormLabel>
+              <FormLabel>用户名</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

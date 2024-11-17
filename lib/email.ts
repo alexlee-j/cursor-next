@@ -1,83 +1,62 @@
 import nodemailer from "nodemailer";
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true,
+// 创建 SMTP 传输对象
+const transporter = nodemailer.createTransport({
+  service: "QQ", // 使用内置的 QQ 服务配置
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
+    pass: process.env.SMTP_PASSWORD, // QQ邮箱的授权码
   },
   tls: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: false, // 在开发环境中可能需要
   },
-  debug: true,
-  logger: true,
 });
 
-// 创建一个初始化函数来测试连接
-export async function verifyConnection() {
-  try {
-    console.log("Testing SMTP connection...");
-    const result = await transporter.verify();
-    console.log("SMTP connection test result:", result);
-    return result;
-  } catch (error) {
-    console.error("SMTP connection test failed:", error);
-    throw error;
+// 验证配置是否正确
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log("SMTP配置错误:", error);
+  } else {
+    console.log("SMTP服务器连接成功!");
   }
-}
+});
 
-export async function sendVerificationEmail(to: string, token: string) {
-  // 先验证连接
-  await verifyConnection();
-
-  const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
-
-  const mailOptions = {
-    from: process.env.SMTP_USER,
-    to,
-    subject: "验证您的邮箱",
-    html: `
-      <h1>验证您的邮箱</h1>
-      <p>请点击下面的链接验证您的邮箱：</p>
-      <a href="${verificationUrl}">${verificationUrl}</a>
-      <p>此链接24小时内有效。</p>
-    `,
-  };
+export async function sendVerificationEmail(email: string, token: string) {
+  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Verification email sent successfully");
+    const info = await transporter.sendMail({
+      from: `"博客系统" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "验证您的邮箱",
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+          <h1 style="color: #333; text-align: center;">验证您的邮箱</h1>
+          <p style="color: #666; font-size: 16px;">您好，</p>
+          <p style="color: #666; font-size: 16px;">请点击下面的链接验证您的邮箱：</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verifyUrl}" 
+               style="background-color: #0070f3; color: white; padding: 12px 24px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              验证邮箱
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            或者复制以下链接到浏览器：<br/>
+            <a href="${verifyUrl}" style="color: #0070f3;">${verifyUrl}</a>
+          </p>
+          <p style="color: #666; font-size: 14px;">此链接24小时内有效。</p>
+          <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            如果您没有注册账号，请忽略此邮件。
+          </p>
+        </div>
+      `,
+    });
+
+    console.log("邮件发送成功:", info.messageId);
+    return info;
   } catch (error) {
-    console.error("Failed to send verification email:", error);
-    throw error;
-  }
-}
-
-export async function sendPasswordResetEmail(to: string, token: string) {
-  await verifyConnection();
-
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
-
-  const mailOptions = {
-    from: process.env.SMTP_USER,
-    to,
-    subject: "重置您的密码",
-    html: `
-      <h1>重置密码</h1>
-      <p>请点击下面的链接重置您的密码：</p>
-      <a href="${resetUrl}">${resetUrl}</a>
-      <p>此链接24小时内有效。</p>
-      <p>如果您没有请求重置密码，请忽略此邮件。</p>
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent successfully");
-  } catch (error) {
-    console.error("Failed to send password reset email:", error);
-    throw error;
+    console.error("发送邮件失败:", error);
+    throw new Error("发送验证邮件失败，请检查邮箱配置");
   }
 }

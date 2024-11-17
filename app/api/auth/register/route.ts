@@ -1,60 +1,71 @@
 import { NextResponse } from "next/server";
-import { hash } from "bcryptjs";
+import { hash } from "bcrypt";
 import { prisma } from "@/lib/db";
+import { isValidEmail, isStrongPassword } from "@/lib/utils";
 import { sendVerificationEmail } from "@/lib/email";
 import { v4 as uuidv4 } from "uuid";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { email, password, name } = body;
+    const { email, password, name } = await req.json();
 
-    if (!email || !password) {
+    // 验证邮箱格式
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: "邮箱格式不正确" }, { status: 400 });
+    }
+
+    // 验证密码强度
+    if (!isStrongPassword(password)) {
       return NextResponse.json(
-        { message: "邮箱和密码不能为空" },
+        { error: "密码需要至少6个字符，包含字母和数字" },
         { status: 400 }
       );
     }
 
-    // 检查邮箱是否已注册
+    // 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      return NextResponse.json({ message: "该邮箱已被注册" }, { status: 400 });
+      return NextResponse.json({ error: "该邮箱已被注册" }, { status: 400 });
     }
 
-    // 创建新用户
-    const hashedPassword = await hash(password, 12);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-        verifications: {
-          create: {
-            token: uuidv4(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    // 创建用户和验证token
+    const hashedPassword = await hash(password, 10);
+    const verifyToken = uuidv4();
+
+    try {
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name: name || email.split("@")[0],
+          emailVerified: false,
+          isActive: true,
+          verifyToken: {
+            create: {
+              token: verifyToken,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            },
           },
         },
-      },
-      include: {
-        verifications: true,
-      },
-    });
+      });
 
-    // 发送验证邮件
-    await sendVerificationEmail(user.email, user.verifications[0].token);
+      // 发送验证邮件
+      await sendVerificationEmail(email, verifyToken);
 
-    return NextResponse.json(
-      { message: "注册成功，请查收验证邮件" },
-      { status: 201 }
-    );
+      return NextResponse.json({
+        message: "注册成功，请查收验证邮件",
+      });
+    } catch (dbError) {
+      console.error("数据库操作失败:", dbError);
+      throw dbError;
+    }
   } catch (error) {
     console.error("注册失败:", error);
     return NextResponse.json(
-      { message: "注册失败，请稍后重试" },
+      { error: "注册失败，请稍后重试" },
       { status: 500 }
     );
   }

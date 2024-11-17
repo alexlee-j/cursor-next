@@ -1,61 +1,58 @@
-import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
-export async function GET(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
+    const { userId, code } = await req.json();
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: "Missing token" },
-        { status: 400 }
-      );
-    }
-
-    // 查找验证token
-    const verification = await prisma.emailVerification.findUnique({
-      where: { token },
-      include: { user: true },
-    });
-
-    if (!verification) {
-      return NextResponse.json(
-        { success: false, message: "Invalid token" },
-        { status: 400 }
-      );
-    }
-
-    // 检查token是否过期
-    if (new Date() > verification.expiresAt) {
-      return NextResponse.json(
-        { success: false, message: "Token has expired" },
-        { status: 400 }
-      );
-    }
-
-    // 更新用户的验证状态
-    await prisma.user.update({
-      where: { id: verification.userId },
-      data: {
-        emailVerified: new Date(),
-        isVerified: true,
+    // 查找验证码记录
+    const verificationRecord = await prisma.verificationCode.findUnique({
+      where: {
+        userId: userId,
+      },
+      include: {
+        user: true,
       },
     });
 
-    // 删除已使用的token
-    await prisma.emailVerification.delete({
-      where: { id: verification.id },
+    if (!verificationRecord) {
+      return NextResponse.json({ error: "验证码不存在" }, { status: 400 });
+    }
+
+    // 检查验证码是否过期
+    if (verificationRecord.expiresAt < new Date()) {
+      return NextResponse.json({ error: "验证码已过期" }, { status: 400 });
+    }
+
+    // 验证码是否匹配
+    if (verificationRecord.code !== code) {
+      return NextResponse.json({ error: "验证码不正确" }, { status: 400 });
+    }
+
+    // 更新用户验证状态
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        emailVerified: true,
+      },
+    });
+
+    // 删除验证码记录
+    await prisma.verificationCode.delete({
+      where: {
+        id: verificationRecord.id,
+      },
     });
 
     return NextResponse.json({
-      success: true,
-      message: "Email verified successfully",
+      message: "邮箱验证成功",
     });
   } catch (error) {
-    console.error("VERIFICATION_ERROR", error);
+    console.error("验证失败:", error);
     return NextResponse.json(
-      { success: false, message: "Verification failed" },
+      { error: "验证失败，请稍后重试" },
       { status: 500 }
     );
   }

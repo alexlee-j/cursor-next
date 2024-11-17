@@ -11,17 +11,12 @@ export function isValidEmail(email: string) {
 }
 
 export function isStrongPassword(password: string) {
-  const minLength = 8;
+  const minLength = 6;
   const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
   const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   return (
-    password.length >= minLength &&
-    hasUpperCase &&
-    hasLowerCase &&
-    hasNumbers &&
-    hasSpecialChar
+    password.length >= minLength && (hasUpperCase || hasLowerCase) && hasNumbers
   );
 }
