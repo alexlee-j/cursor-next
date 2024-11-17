@@ -21,10 +21,13 @@ export function DashboardNav({ user, children }: DashboardNavProps) {
         <div className="flex items-center gap-4">
           {children}
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <span className="font-bold">Dashboard</span>
+            <span className="font-bold hidden md:inline-block">
+              博客管理系统
+            </span>
+            <span className="font-bold md:hidden">管理系统</span>
           </Link>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
           <UserNav user={user} />
         </div>

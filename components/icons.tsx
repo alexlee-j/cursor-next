@@ -1,9 +1,18 @@
-import { LucideProps, Moon, SunMedium, User } from "lucide-react";
+import {
+  LucideProps,
+  Moon,
+  SunMedium,
+  User,
+  Plus,
+  MoreVertical,
+} from "lucide-react";
 
 export const Icons = {
   sun: SunMedium,
   moon: Moon,
   user: User,
+  add: Plus,
+  more: MoreVertical,
   logo: (props: LucideProps) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"

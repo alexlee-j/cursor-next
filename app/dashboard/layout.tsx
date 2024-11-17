@@ -33,11 +33,20 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <DashboardNav user={user} />
-      <div className="container flex-1 items-start md:grid md:grid-cols-[200px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
-        <SidebarContainer items={sidebarItems} />
-        <main className="flex w-full flex-col overflow-hidden">{children}</main>
+    <div className="relative min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
+      {/* 侧边栏 - 桌面端固定，移动端可滑动 */}
+      <SidebarContainer items={sidebarItems} className="hidden lg:block" />
+
+      {/* 主内容区 */}
+      <div className="flex flex-col">
+        <DashboardNav user={user}>
+          <SidebarContainer items={sidebarItems} className="lg:hidden" />
+        </DashboardNav>
+        <main className="flex-1">
+          <div className="container max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
