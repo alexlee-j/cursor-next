@@ -22,6 +22,8 @@ async function getPosts(page: number = 1) {
         _count: {
           select: {
             comments: true,
+            likes: true,
+            favorites: true,
           },
         },
       },
@@ -35,8 +37,8 @@ async function getPosts(page: number = 1) {
     posts: posts.map((post) => ({
       ...post,
       commentsCount: post._count.comments,
-      likesCount: 0,
-      bookmarksCount: 0,
+      likesCount: post._count.likes,
+      favoritesCount: post._count.favorites,
     })),
     currentPage: page,
     totalPages,
@@ -53,9 +55,8 @@ export default async function PostsPage({
     redirect("/login");
   }
 
-  const page = searchParams?.page
-    ? parseInt(await Promise.resolve(searchParams.page), 10)
-    : 1;
+  const pageParam = searchParams?.page;
+  const page = pageParam ? parseInt(pageParam as string, 10) : 1;
   const { posts, currentPage, totalPages } = await getPosts(page);
 
   return (

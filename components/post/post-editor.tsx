@@ -20,6 +20,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { MarkdownEditor } from "./markdown-editor";
 import { RichTextEditor } from "./rich-text-editor";
 import { Preview } from "./preview";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const postFormSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
@@ -45,6 +51,7 @@ export function PostEditor({ post }: PostEditorProps) {
     (post?.type as "markdown" | "richtext") || "markdown"
   );
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postFormSchema),
@@ -54,8 +61,12 @@ export function PostEditor({ post }: PostEditorProps) {
     },
   });
 
-  async function onSubmit(data: PostFormValues) {
+  async function handleSubmit(
+    data: PostFormValues,
+    status: "DRAFT" | "PUBLISHED"
+  ) {
     try {
+      setIsSubmitting(true);
       const url = post ? `/api/posts/${post.id}` : "/api/posts";
       const method = post ? "PATCH" : "POST";
 
@@ -67,7 +78,7 @@ export function PostEditor({ post }: PostEditorProps) {
         body: JSON.stringify({
           ...data,
           type: editorType,
-          status: "DRAFT",
+          status,
         }),
       });
 
@@ -77,7 +88,7 @@ export function PostEditor({ post }: PostEditorProps) {
 
       toast({
         title: post ? "更新成功" : "发布成功",
-        description: "文章已保存为草稿",
+        description: status === "PUBLISHED" ? "文章已发布" : "文章已保存为草稿",
       });
 
       router.push("/dashboard/posts");
@@ -88,6 +99,8 @@ export function PostEditor({ post }: PostEditorProps) {
         title: post ? "更新失败" : "发布失败",
         description: error instanceof Error ? error.message : "请稍后重试",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -95,7 +108,10 @@ export function PostEditor({ post }: PostEditorProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit((data) => handleSubmit(data, "DRAFT"))}
+        className="space-y-8"
+      >
         <FormField
           control={form.control}
           name="title"
@@ -160,10 +176,33 @@ export function PostEditor({ post }: PostEditorProps) {
         </Tabs>
 
         <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isSubmitting}
+          >
             取消
           </Button>
-          <Button type="submit">保存草稿</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              form.handleSubmit((data) => handleSubmit(data, "DRAFT"))()
+            }
+            disabled={isSubmitting}
+          >
+            保存草稿
+          </Button>
+          <Button
+            type="button"
+            onClick={() =>
+              form.handleSubmit((data) => handleSubmit(data, "PUBLISHED"))()
+            }
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "发布中..." : "发布文章"}
+          </Button>
         </div>
       </form>
     </Form>

@@ -25,6 +25,8 @@ model User {
   userRoles     UserRole[]
   posts         Post[]
   comments      Comment[]
+  likes         Like[]
+  favorites    Favorite[]
 
   @@map("users")
 }
@@ -123,7 +125,6 @@ model Post {
   status      PostStatus @default(DRAFT)
   excerpt     String?    @db.Text
   viewCount   Int        @default(0)
-  likesCount  Int        @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   authorId    String
@@ -131,8 +132,10 @@ model Post {
 
   // 关联
   comments    Comment[]
+  likes       Like[]
   postTags    PostTag[]
   analytics   Analytics[]
+  favorites   Favorite[]
 
   @@map("posts")
 }
@@ -193,4 +196,29 @@ enum CommentStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+// 点赞表
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+// 收藏表
+model Favorite {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("favorites")
 }
