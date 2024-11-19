@@ -9,10 +9,10 @@ export async function POST(
   try {
     const user = await checkAuth();
     if (!user) {
-      return new NextResponse(null, { status: 401 });
+      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const postId = params.id;
+    const postId = await params.id;
 
     // 检查文章是否存在
     const post = await prisma.post.findUnique({
@@ -20,31 +20,36 @@ export async function POST(
     });
 
     if (!post) {
-      return new NextResponse(null, { status: 404 });
+      return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    // 创建点赞记录并更新点赞数
-    await prisma.$transaction([
-      prisma.like.create({
-        data: {
-          postId,
-          userId: user.id,
-        },
-      }),
-      prisma.post.update({
-        where: { id: postId },
-        data: {
-          likesCount: {
-            increment: 1,
-          },
-        },
-      }),
-    ]);
+    // 检查是否已经点赞
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        postId,
+        userId: user.id,
+      },
+    });
 
-    return new NextResponse(null, { status: 200 });
+    if (existingLike) {
+      return NextResponse.json({ error: "已经点过赞了" }, { status: 400 });
+    }
+
+    // 创建点赞记录
+    await prisma.like.create({
+      data: {
+        postId,
+        userId: user.id,
+      },
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("[LIKE_POST]", error);
-    return new NextResponse(null, { status: 500 });
+    return NextResponse.json(
+      { error: "点赞失败，请稍后重试" },
+      { status: 500 }
+    );
   }
 }
 
@@ -55,10 +60,10 @@ export async function DELETE(
   try {
     const user = await checkAuth();
     if (!user) {
-      return new NextResponse(null, { status: 401 });
+      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const postId = params.id;
+    const postId = await params.id;
 
     // 检查点赞记录是否存在
     const like = await prisma.like.findFirst({
@@ -69,29 +74,22 @@ export async function DELETE(
     });
 
     if (!like) {
-      return new NextResponse(null, { status: 404 });
+      return NextResponse.json({ error: "点赞记录不存在" }, { status: 404 });
     }
 
-    // 删除点赞记录并更新点赞数
-    await prisma.$transaction([
-      prisma.like.delete({
-        where: {
-          id: like.id,
-        },
-      }),
-      prisma.post.update({
-        where: { id: postId },
-        data: {
-          likesCount: {
-            decrement: 1,
-          },
-        },
-      }),
-    ]);
+    // 删除点赞记录
+    await prisma.like.delete({
+      where: {
+        id: like.id,
+      },
+    });
 
-    return new NextResponse(null, { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("[UNLIKE_POST]", error);
-    return new NextResponse(null, { status: 500 });
+    return NextResponse.json(
+      { error: "取消点赞失败，请稍后重试" },
+      { status: 500 }
+    );
   }
 }

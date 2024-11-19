@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { isValidEmail, isStrongPassword } from "@/lib/utils";
 import { sendVerificationEmail } from "@/lib/email";
 import { v4 as uuidv4 } from "uuid";
+import { ensureDefaultFolder } from "@/middleware/favorite-folder";
 
 export async function POST(req: Request) {
   try {
@@ -52,8 +53,12 @@ export async function POST(req: Request) {
         },
       });
 
-      // 发送验证邮件
-      await sendVerificationEmail(email, verifyToken);
+      // 发送验证邮件，使用环境变量中的基础 URL
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+      await sendVerificationEmail(email, verifyToken, baseUrl);
+
+      // 确保默认收藏夹
+      await ensureDefaultFolder(user.id);
 
       return NextResponse.json({
         message: "注册成功，请查收验证邮件",

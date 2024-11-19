@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import * as z from "zod";
+
+const favoriteSchema = z.object({
+  folderId: z.string(),
+});
 
 export async function POST(
   req: NextRequest,
@@ -9,10 +14,12 @@ export async function POST(
   try {
     const user = await checkAuth();
     if (!user) {
-      return new NextResponse(null, { status: 401 });
+      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
     const postId = params.id;
+    const json = await req.json();
+    const { folderId } = favoriteSchema.parse(json);
 
     // 检查文章是否存在
     const post = await prisma.post.findUnique({
@@ -20,31 +27,37 @@ export async function POST(
     });
 
     if (!post) {
-      return new NextResponse(null, { status: 404 });
+      return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    // 创建收藏记录并更新收藏数
-    await prisma.$transaction([
-      prisma.favorite.create({
-        data: {
-          postId,
-          userId: user.id,
-        },
-      }),
-      prisma.post.update({
-        where: { id: postId },
-        data: {
-          favoritesCount: {
-            increment: 1,
-          },
-        },
-      }),
-    ]);
+    // 检查收藏夹是否存在且属于当前用户
+    const folder = await prisma.favoriteFolder.findFirst({
+      where: {
+        id: folderId,
+        userId: user.id,
+      },
+    });
 
-    return new NextResponse(null, { status: 200 });
+    if (!folder) {
+      return NextResponse.json({ error: "收藏夹不存在" }, { status: 404 });
+    }
+
+    // 创建收藏记录
+    await prisma.favorite.create({
+      data: {
+        postId,
+        userId: user.id,
+        folderId,
+      },
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[FAVORITE_POST]", error);
-    return new NextResponse(null, { status: 500 });
+    return NextResponse.json(
+      { error: "收藏失败，请稍后重试" },
+      { status: 500 }
+    );
   }
 }
 
@@ -55,48 +68,42 @@ export async function DELETE(
   try {
     const user = await checkAuth();
     if (!user) {
-      return new NextResponse(null, { status: 401 });
+      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
     const postId = params.id;
+    const searchParams = req.nextUrl.searchParams;
+    const folderId = searchParams.get("folderId");
 
-    // 检查收藏记录是否存在
-    const favorite = await prisma.favorite.findUnique({
+    if (!folderId) {
+      return NextResponse.json({ error: "需要指定收藏夹" }, { status: 400 });
+    }
+
+    // 删除收藏记录
+    const favorite = await prisma.favorite.findFirst({
       where: {
-        postId_userId: {
-          postId,
-          userId: user.id,
-        },
+        postId,
+        userId: user.id,
+        folderId,
       },
     });
 
     if (!favorite) {
-      return new NextResponse(null, { status: 404 });
+      return NextResponse.json({ error: "收藏记录不存在" }, { status: 404 });
     }
 
-    // 删除收藏记录并更新收藏数
-    await prisma.$transaction([
-      prisma.favorite.delete({
-        where: {
-          postId_userId: {
-            postId,
-            userId: user.id,
-          },
-        },
-      }),
-      prisma.post.update({
-        where: { id: postId },
-        data: {
-          favoritesCount: {
-            decrement: 1,
-          },
-        },
-      }),
-    ]);
+    await prisma.favorite.delete({
+      where: {
+        id: favorite.id,
+      },
+    });
 
-    return new NextResponse(null, { status: 200 });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[UNFAVORITE_POST]", error);
-    return new NextResponse(null, { status: 500 });
+    return NextResponse.json(
+      { error: "取消收藏失败，请稍后重试" },
+      { status: 500 }
+    );
   }
 }

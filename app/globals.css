@@ -157,3 +157,12 @@
   max-width: 100%;
   height: auto;
 }
+
+@media (max-width: 640px) {
+  .prose {
+    font-size: 0.875rem;
+  }
+  .prose h1 {
+    font-size: 1.5rem;
+  }
+}

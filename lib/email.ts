@@ -21,8 +21,12 @@ transporter.verify(function (error, success) {
   }
 });
 
-export async function sendVerificationEmail(email: string, token: string) {
-  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
+export async function sendVerificationEmail(
+  email: string,
+  token: string,
+  baseUrl: string
+) {
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
 
   try {
     const info = await transporter.sendMail({
@@ -35,7 +39,7 @@ export async function sendVerificationEmail(email: string, token: string) {
           <p style="color: #666; font-size: 16px;">您好，</p>
           <p style="color: #666; font-size: 16px;">请点击下面的链接验证您的邮箱：</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${verifyUrl}" 
+            <a href="${verificationUrl}" 
                style="background-color: #0070f3; color: white; padding: 12px 24px; 
                       text-decoration: none; border-radius: 5px; display: inline-block;">
               验证邮箱
@@ -43,7 +47,7 @@ export async function sendVerificationEmail(email: string, token: string) {
           </div>
           <p style="color: #666; font-size: 14px;">
             或者复制以下链接到浏览器：<br/>
-            <a href="${verifyUrl}" style="color: #0070f3;">${verifyUrl}</a>
+            <a href="${verificationUrl}" style="color: #0070f3;">${verificationUrl}</a>
           </p>
           <p style="color: #666; font-size: 14px;">此链接24小时内有效。</p>
           <p style="color: #999; font-size: 12px; margin-top: 30px;">

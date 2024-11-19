@@ -23,9 +23,10 @@ const formSchema = z.object({
   }),
   password: z
     .string()
-    .min(6, { message: "密码至少需要6个字符" })
-    .regex(/[A-Za-z]/, { message: "密码必须包含字母" })
-    .regex(/[0-9]/, { message: "密码必须包含数字" }),
+    .min(8, { message: "密码至少需要8个字符" })
+    .regex(/[A-Z]/, { message: "密码必须包含至少一个大写字母" })
+    .regex(/[0-9]/, { message: "密码必须包含至少一个数字" })
+    .regex(/[^A-Za-z0-9]/, { message: "密码必须包含至少一个特殊字符" }),
   name: z.string().optional(),
 });
 

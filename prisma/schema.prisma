@@ -27,6 +27,7 @@ model User {
   comments      Comment[]
   likes         Like[]
   favorites    Favorite[]
+  favoriteFolders FavoriteFolder[]
 
   @@map("users")
 }
@@ -201,23 +202,40 @@ enum CommentStatus {
 // 点赞表
 model Like {
   id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id])
   postId    String
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
+  @@map("likes")
+}
+
+// 收藏夹表
+model FavoriteFolder {
+  id          String     @id @default(cuid())
+  name        String     
+  description String?    
+  isDefault   Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites   Favorite[]
+
+  @@unique([userId, name])
+  @@map("favorite_folders")
 }
 
 // 收藏表
 model Favorite {
   id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id])
   postId    String
+  user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
   @@map("favorites")

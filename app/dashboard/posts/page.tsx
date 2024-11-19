@@ -8,11 +8,12 @@ import { prisma } from "@/lib/db";
 
 const POSTS_PER_PAGE = 10;
 
-async function getPosts(page: number = 1) {
+async function getPosts(userId: string, page: number = 1) {
   const skip = (page - 1) * POSTS_PER_PAGE;
 
   const [posts, totalPosts] = await Promise.all([
     prisma.post.findMany({
+      where: { authorId: userId },
       take: POSTS_PER_PAGE,
       skip,
       orderBy: {
@@ -28,7 +29,9 @@ async function getPosts(page: number = 1) {
         },
       },
     }),
-    prisma.post.count(),
+    prisma.post.count({
+      where: { authorId: userId },
+    }),
   ]);
 
   const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
@@ -57,7 +60,7 @@ export default async function PostsPage({
 
   const pageParam = searchParams?.page;
   const page = pageParam ? parseInt(pageParam as string, 10) : 1;
-  const { posts, currentPage, totalPages } = await getPosts(page);
+  const { posts, currentPage, totalPages } = await getPosts(user.id, page);
 
   return (
     <DashboardShell>

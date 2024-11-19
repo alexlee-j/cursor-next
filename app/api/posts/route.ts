@@ -1,48 +1,34 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import * as z from "zod";
 
-export async function POST(req: Request) {
+const postSchema = z.object({
+  title: z.string().min(1, { message: "标题不能为空" }),
+  content: z.string().min(1, { message: "内容不能为空" }),
+  type: z.enum(["markdown", "richtext"]),
+  status: z.enum(["DRAFT", "PUBLISHED"]),
+  excerpt: z.string().optional(),
+});
+
+export async function POST(req: NextRequest) {
   try {
     const user = await checkAuth();
     if (!user) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 });
+      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const { title, content, type, status = "DRAFT" } = await req.json();
+    const json = await req.json();
+    const body = postSchema.parse(json);
 
-    // 验证必填字段
-    if (!title || !content) {
-      return NextResponse.json(
-        { error: "标题和内容不能为空" },
-        { status: 400 }
-      );
-    }
-
-    // 生成摘要
-    const excerpt = content
-      .replace(/<[^>]+>/g, "") // 移除 HTML 标签
-      .slice(0, 200) // 取前200个字符
-      .trim();
-
-    // 创建文章
     const post = await prisma.post.create({
       data: {
-        title,
-        content,
-        type: type || "markdown",
-        status,
-        excerpt,
+        ...body,
         authorId: user.id,
-        viewCount: 0,
-        likesCount: 0,
       },
     });
 
-    return NextResponse.json({
-      message: "文章创建成功",
-      post,
-    });
+    return NextResponse.json(post, { status: 201 });
   } catch (error) {
     console.error("创建文章失败:", error);
     return NextResponse.json(
@@ -52,50 +38,38 @@ export async function POST(req: Request) {
   }
 }
 
-// 获取文章列表
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const user = await checkAuth();
-    if (!user) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
-
-    const where = {
-      authorId: user.id,
-      ...(status ? { status } : {}),
-    };
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
-        where,
-        orderBy: {
-          updatedAt: "desc",
-        },
-        skip,
         take: limit,
+        skip,
+        orderBy: {
+          createdAt: "desc",
+        },
         include: {
-          _count: {
+          author: {
             select: {
-              comments: true,
+              name: true,
+              email: true,
             },
           },
         },
       }),
-      prisma.post.count({ where }),
+      prisma.post.count(),
     ]);
 
     return NextResponse.json({
       posts,
       pagination: {
-        total,
         page,
         limit,
+        total,
         totalPages: Math.ceil(total / limit),
       },
     });
