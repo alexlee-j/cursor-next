@@ -7,19 +7,9 @@ import { Comments } from "@/components/post/comments";
 import { LikeButton } from "@/components/post/like-button";
 import { FavoriteDialog } from "@/components/post/favorite-dialog";
 import { marked } from "marked";
+import { Post, Prisma } from "@prisma/client";
 
-// 添加类型定义
-type PostWithRelations = {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  status: string;
-  excerpt: string | null;
-  viewCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-  authorId: string;
+type PostWithRelations = Post & {
   author: {
     id: string;
     name: string | null;
@@ -28,6 +18,7 @@ type PostWithRelations = {
   comments: {
     id: string;
     content: string;
+    createdAt: Date;
     user: {
       name: string | null;
       email: string;
@@ -45,13 +36,18 @@ async function getPost(
 ): Promise<{
   post:
     | (PostWithRelations & {
-        content: string;
         likesCount: number;
         favoritesCount: number;
       })
     | null;
   liked: boolean;
-  favorited: boolean;
+  favoriteFolders: {
+    id: string;
+    name: string;
+    description: string | null;
+    isDefault: boolean;
+    isFavorited: boolean;
+  }[];
 }> {
   try {
     // 配置 marked
@@ -75,10 +71,10 @@ async function getPost(
           where: {
             status: "APPROVED",
           },
-          orderBy: {
-            createdAt: "desc",
-          },
-          include: {
+          select: {
+            id: true,
+            content: true,
+            createdAt: true,
             user: {
               select: {
                 name: true,
@@ -101,15 +97,21 @@ async function getPost(
       !post ||
       (post.status !== "PUBLISHED" && (!userId || userId !== post.authorId))
     ) {
-      return { post: null, liked: false, favorited: false };
+      return { post: null, liked: false, favoriteFolders: [] };
     }
 
-    // 获取当前用户的点赞和收藏状态
+    // 获取用户的收藏夹及其收藏状态
     let liked = false;
-    let favorited = false;
+    let favoriteFolders: {
+      id: string;
+      name: string;
+      description: string | null;
+      isDefault: boolean;
+      isFavorited: boolean;
+    }[] = [];
 
     if (userId) {
-      [liked, favorited] = await Promise.all([
+      const [likeStatus, userFavoriteFolders] = await Promise.all([
         prisma.like
           .findFirst({
             where: {
@@ -117,15 +119,28 @@ async function getPost(
             },
           })
           .then((like) => !!like),
-        prisma.favorite
-          .findFirst({
-            where: {
-              postId: id,
-              userId,
+        prisma.favoriteFolder.findMany({
+          where: { userId },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            isDefault: true,
+            favorites: {
+              where: { postId: id },
             },
-          })
-          .then((favorite) => !!favorite),
+          },
+        }),
       ]);
+
+      liked = likeStatus;
+      favoriteFolders = userFavoriteFolders.map((folder) => ({
+        id: folder.id,
+        name: folder.name,
+        description: folder.description,
+        isDefault: folder.isDefault,
+        isFavorited: folder.favorites.length > 0,
+      }));
     }
 
     // 处理 markdown 内容
@@ -139,19 +154,26 @@ async function getPost(
       }
     }
 
+    // 构造返回对象，确保类型正确
+    const postWithCounts = {
+      ...post,
+      content,
+      likesCount: post._count?.likes ?? 0,
+      favoritesCount: post._count?.favorites ?? 0,
+    };
+
     return {
-      post: {
-        ...post,
-        content,
-        likesCount: post._count.likes,
-        favoritesCount: post._count.favorites,
-      },
+      post: postWithCounts,
       liked,
-      favorited,
+      favoriteFolders,
     };
   } catch (error) {
     console.error("Error fetching post:", error);
-    return { post: null, liked: false, favorited: false };
+    return {
+      post: null,
+      liked: false,
+      favoriteFolders: [],
+    };
   }
 }
 
@@ -161,7 +183,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     const user = await checkAuth().catch(() => null);
     const postId = params.id;
 
-    const { post, liked, favorited } = await getPost(postId, user?.id);
+    const { post, liked, favoriteFolders } = await getPost(postId, user?.id);
 
     // 如果文章不存在或无权访问，重定向到首页
     if (!post) {
@@ -213,8 +235,8 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                     />
                     <FavoriteDialog
                       postId={post.id}
-                      initialFavorited={favorited}
-                      initialCount={post.favoritesCount}
+                      initialFolders={favoriteFolders}
+                      initialCount={post._count.favorites}
                     />
                   </>
                 )}

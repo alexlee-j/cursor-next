@@ -202,9 +202,9 @@ enum CommentStatus {
 // 点赞表
 model Like {
   id        String   @id @default(cuid())
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   createdAt DateTime @default(now())
 
@@ -230,13 +230,15 @@ model FavoriteFolder {
 
 // 收藏表
 model Favorite {
-  id        String   @id @default(cuid())
-  post      Post     @relation(fields: [postId], references: [id])
+  id        String         @id @default(cuid())
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  createdAt DateTime @default(now())
+  folder    FavoriteFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId  String
+  createdAt DateTime      @default(now())
 
-  @@unique([postId, userId])
+  @@unique([postId, userId, folderId])
   @@map("favorites")
 }

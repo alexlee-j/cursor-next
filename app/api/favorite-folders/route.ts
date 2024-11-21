@@ -1,52 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import * as z from "zod";
+import { checkAuth } from "@/lib/auth";
+import { z } from "zod";
 
 const createFolderSchema = z.object({
-  name: z.string().min(1).max(50),
-  description: z.string().max(200).optional(),
+  name: z.string().min(1, "名称不能为空").max(50, "名称不能超过50个字符"),
+  description: z.string().max(200, "描述不能超过200个字符").optional(),
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const user = await checkAuth();
+
     if (!user) {
-      return NextResponse.json({ error: "未授权访问" }, { status: 401 });
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const json = await req.json();
-    const body = createFolderSchema.parse(json);
+    const body = await request.json();
+    const validatedData = createFolderSchema.parse(body);
 
-    // 检查用户的收藏夹数量是否达到上限
-    const folderCount = await prisma.favoriteFolder.count({
-      where: { userId: user.id },
+    // 检查同名收藏夹
+    const existingFolder = await prisma.favoriteFolder.findFirst({
+      where: {
+        userId: user.id,
+        name: validatedData.name,
+      },
     });
 
-    if (folderCount >= 20) {
-      return NextResponse.json(
-        { error: "收藏夹数量已达到上限" },
-        { status: 400 }
-      );
+    if (existingFolder) {
+      return Response.json({ error: "已存在同名收藏夹" }, { status: 400 });
     }
 
     // 创建收藏夹
     const folder = await prisma.favoriteFolder.create({
       data: {
-        name: body.name,
-        description: body.description,
+        ...validatedData,
         userId: user.id,
       },
     });
 
-    return NextResponse.json(folder, { status: 201 });
+    return Response.json(folder);
   } catch (error) {
-    console.error("[CREATE_FAVORITE_FOLDER]", error);
-    return NextResponse.json({ error: "创建收藏夹失败" }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return Response.json({ error: error.errors[0].message }, { status: 400 });
+    }
+    console.error("Error creating favorite folder:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await checkAuth().catch(() => null);
     if (!user) {
