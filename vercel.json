@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/tasks/comment-approval",
+      "schedule": "*/30 * * * *" // 每30分钟运行一次
+    }
+  ]
+}

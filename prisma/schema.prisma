@@ -17,6 +17,10 @@ model User {
   emailVerified Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  commentCount  Int       @default(0)
+  approvedCount Int       @default(0)
+  lastCommentAt DateTime?
+  trustLevel    String    @default("new")
 
   // 关联
   verifyToken   VerifyToken?
@@ -30,6 +34,8 @@ model User {
   favoriteFolders FavoriteFolder[]
   followers     Follow[] @relation("Followers")
   following     Follow[] @relation("Following")
+  repliedTo     Comment[] @relation("CommentReplyTo")
+  receivedReplies Comment[] @relation("CommentRepliedBy")
 
   @@map("users")
 }
@@ -153,6 +159,17 @@ model Comment {
   userId    String
   post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 回复相关字段
+  parentId  String?      // 父评论ID
+  parent    Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]    @relation("CommentReplies")
+  
+  // 回复用户相关字段
+  replyToId String?      // 回复目标用户ID
+  replyTo   User?        @relation("CommentReplyTo", fields: [replyToId], references: [id])
+  repliedBy User[]       @relation("CommentRepliedBy")
+  autoApproved Boolean  @default(false)
 
   @@map("comments")
 }
@@ -257,4 +274,14 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+model OperationLog {
+  id          String   @id @default(cuid())
+  type        String
+  description String
+  metadata    Json
+  createdAt   DateTime @default(now())
+
+  @@map("operation_logs")
 }

@@ -3,8 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { initializeRolesAndPermissions } from "@/lib/init-permissions";
 
 const inter = Inter({ subsets: ["latin"] });
+
+// 确保角色和权限已初始化
+initializeRolesAndPermissions().catch(console.error);
 
 export const metadata: Metadata = {
   title: "Create Next App",

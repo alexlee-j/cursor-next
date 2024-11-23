@@ -1,4 +1,6 @@
 import { checkAuth } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
+import { PERMISSIONS } from "@/lib/constants/permissions";
 import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
@@ -57,6 +59,8 @@ export default async function PostsPage({
   if (!user) {
     redirect("/login");
   }
+
+  const canManageAllPosts = await hasPermission(user, PERMISSIONS.POST.MANAGE);
 
   const pageParam = searchParams?.page;
   const page = pageParam ? parseInt(pageParam as string, 10) : 1;

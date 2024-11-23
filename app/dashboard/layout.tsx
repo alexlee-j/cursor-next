@@ -1,26 +1,7 @@
-import { DashboardNav } from "@/components/dashboard/nav";
-import { SidebarContainer } from "@/components/dashboard/sidebar-container";
 import { checkAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-
-const sidebarItems = [
-  {
-    title: "概览",
-    href: "/dashboard",
-  },
-  {
-    title: "文章管理",
-    href: "/dashboard/posts",
-  },
-  {
-    title: "评论管理",
-    href: "/dashboard/comments",
-  },
-  {
-    title: "数据统计",
-    href: "/dashboard/analytics",
-  },
-];
+import { DashboardNav } from "@/components/dashboard/nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -28,24 +9,36 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await checkAuth();
+
   if (!user) {
     redirect("/login");
   }
 
   return (
-    <div className="relative min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
-      {/* 侧边栏 - 桌面端固定，移动端可滑动 */}
-      <SidebarContainer items={sidebarItems} className="hidden lg:block" />
+    <div className="flex min-h-screen">
+      <aside className="hidden w-[200px] flex-col border-r bg-background md:flex">
+        <div className="flex h-14 items-center border-b px-4">
+          <h2 className="text-lg font-semibold">仪表盘</h2>
+        </div>
+        <div className="flex-1 overflow-auto py-4">
+          <DashboardNav />
+        </div>
+      </aside>
 
-      {/* 主内容区 */}
-      <div className="flex flex-col">
-        <DashboardNav user={user}>
-          <SidebarContainer items={sidebarItems} className="lg:hidden" />
-        </DashboardNav>
-        <main className="flex-1">
-          <div className="container max-w-screen-2xl p-4 md:p-6 2xl:p-10">
-            {children}
+      <div className="flex-1 flex flex-col">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-14 items-center justify-between">
+            <div className="md:hidden">
+              <DashboardNav />
+            </div>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
           </div>
+        </header>
+
+        <main className="flex-1">
+          <div className="container py-6">{children}</div>
         </main>
       </div>
     </div>

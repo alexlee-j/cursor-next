@@ -1,0 +1,15 @@
+name: Auto Approve Comments
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # 每30分钟运行一次
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger auto approval
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.APP_URL }}/api/tasks/comment-approval

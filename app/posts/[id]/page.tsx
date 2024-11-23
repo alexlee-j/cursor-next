@@ -27,6 +27,19 @@ type PostWithRelations = Post & {
       name: string | null;
       email: string;
     };
+    replies: {
+      id: string;
+      content: string;
+      createdAt: Date;
+      user: {
+        name: string | null;
+        email: string;
+      };
+      replyTo: {
+        name: string | null;
+        email: string;
+      };
+    }[];
   }[];
   _count: {
     likes: number;
@@ -75,16 +88,38 @@ async function getPost(
         },
         comments: {
           where: {
-            status: "APPROVED",
+            AND: [{ status: "APPROVED" }, { parentId: null }],
           },
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
             user: {
               select: {
                 name: true,
                 email: true,
+              },
+            },
+            replies: {
+              where: {
+                status: "APPROVED",
+              },
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+                replyTo: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+              orderBy: {
+                createdAt: "asc",
               },
             },
           },
