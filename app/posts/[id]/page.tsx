@@ -7,7 +7,11 @@ import { Comments } from "@/components/post/comments";
 import { LikeButton } from "@/components/post/like-button";
 import { FavoriteDialog } from "@/components/post/favorite-dialog";
 import { marked } from "marked";
-import { Post, Prisma } from "@prisma/client";
+import { Post } from "@prisma/client";
+import { MessageSquare } from "lucide-react";
+import { QuickActions } from "@/components/post/quick-actions";
+import { FollowButton } from "@/components/user/follow-button";
+import { PostActionsProvider } from "@/components/post/post-actions-context";
 
 type PostWithRelations = Post & {
   author: {
@@ -48,6 +52,8 @@ async function getPost(
     isDefault: boolean;
     isFavorited: boolean;
   }[];
+  isFollowing: boolean;
+  followersCount: number;
 }> {
   try {
     // 配置 marked
@@ -97,7 +103,13 @@ async function getPost(
       !post ||
       (post.status !== "PUBLISHED" && (!userId || userId !== post.authorId))
     ) {
-      return { post: null, liked: false, favoriteFolders: [] };
+      return {
+        post: null,
+        liked: false,
+        favoriteFolders: [],
+        isFollowing: false,
+        followersCount: 0,
+      };
     }
 
     // 获取用户的收藏夹及其收藏状态
@@ -162,10 +174,31 @@ async function getPost(
       favoritesCount: post._count?.favorites ?? 0,
     };
 
+    let isFollowing = false;
+    let followersCount = 0;
+
+    if (userId) {
+      const [followStatus, followers] = await Promise.all([
+        prisma.follow.findFirst({
+          where: {
+            AND: [{ followerId: userId }, { followingId: post.authorId }],
+          },
+        }),
+        prisma.follow.count({
+          where: { followingId: post.authorId },
+        }),
+      ]);
+
+      isFollowing = !!followStatus;
+      followersCount = followers;
+    }
+
     return {
       post: postWithCounts,
       liked,
       favoriteFolders,
+      isFollowing,
+      followersCount,
     };
   } catch (error) {
     console.error("Error fetching post:", error);
@@ -173,6 +206,8 @@ async function getPost(
       post: null,
       liked: false,
       favoriteFolders: [],
+      isFollowing: false,
+      followersCount: 0,
     };
   }
 }
@@ -183,7 +218,8 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     const user = await checkAuth().catch(() => null);
     const postId = params.id;
 
-    const { post, liked, favoriteFolders } = await getPost(postId, user?.id);
+    const { post, liked, favoriteFolders, isFollowing, followersCount } =
+      await getPost(postId, user?.id);
 
     // 如果文章不存在或无权访问，重定向到首页
     if (!post) {
@@ -208,71 +244,107 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     }
 
     return (
-      <article className="container max-w-3xl py-6 lg:py-12">
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-            <h1 className="text-4xl font-bold">{post.title}</h1>
-            {isDraft && <Badge variant="secondary">草稿</Badge>}
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center md:space-x-4 text-sm text-muted-foreground">
-            <div>作者：{post.author.name || post.author.email}</div>
-            <div>发布于：{formatDate(post.createdAt)}</div>
-            {post.updatedAt > post.createdAt && (
-              <div>更新于：{formatDate(post.updatedAt)}</div>
-            )}
-            <div className="flex items-center justify-between space-x-4">
-              <span>
-                浏览：
-                {isDraft ? post.viewCount : post.viewCount + 1}
-              </span>
-              <span>
-                {!isDraft && (
-                  <>
-                    <LikeButton
-                      postId={post.id}
-                      initialLiked={liked}
-                      initialCount={post.likesCount}
-                    />
-                    <FavoriteDialog
-                      postId={post.id}
-                      initialFolders={favoriteFolders}
-                      initialCount={post._count.favorites}
-                    />
-                  </>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="prose dark:prose-invert mt-8 max-w-none">
-          <div
-            className={
-              post.type === "markdown" ? "markdown-content" : "wysiwyg-content"
-            }
-            dangerouslySetInnerHTML={{
-              __html: post.content,
-            }}
-          />
-        </div>
-
-        {!isDraft && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">评论</h2>
-            <Comments
+      <PostActionsProvider
+        initialLiked={liked}
+        initialLikesCount={post.likesCount}
+        initialIsFavorited={favoriteFolders.some(
+          (folder) => folder.isFavorited
+        )}
+        initialFavoritesCount={post._count.favorites}
+      >
+        <div className="container relative max-w-3xl py-6 lg:py-12">
+          <div className="hidden lg:flex fixed right-[max(0px,calc(50%-45rem))] top-1/2 -translate-y-1/2 flex-col gap-4 pr-4">
+            <QuickActions
               postId={post.id}
-              initialComments={post.comments}
-              isLoggedIn={!!user}
+              liked={liked}
+              likesCount={post.likesCount}
+              favoriteFolders={favoriteFolders}
+              favoritesCount={post._count.favorites}
+              commentsCount={post.comments.length}
             />
           </div>
-        )}
 
-        {isDraft && !isAuthor && (
-          <div className="mt-12 text-center text-muted-foreground">
-            <p>草稿状态下不支持评论、点赞和收藏功能</p>
-          </div>
-        )}
-      </article>
+          <article>
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+                <h1 className="text-4xl font-bold">{post.title}</h1>
+                {isDraft && <Badge variant="secondary">草稿</Badge>}
+              </div>
+              <div className="flex flex-col md:flex-row md:items-center md:space-x-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span>作者：{post.author.name || post.author.email}</span>
+                  {!isAuthor && (
+                    <FollowButton
+                      authorId={post.authorId}
+                      initialIsFollowing={isFollowing}
+                      initialCount={followersCount}
+                    />
+                  )}
+                </div>
+                <div>发布于：{formatDate(post.createdAt)}</div>
+                {post.updatedAt > post.createdAt && (
+                  <div>更新于：{formatDate(post.updatedAt)}</div>
+                )}
+                <div className="flex items-center justify-between space-x-4">
+                  <span>
+                    浏览：
+                    {isDraft ? post.viewCount : post.viewCount + 1}
+                  </span>
+                  <span>
+                    {!isDraft && (
+                      <>
+                        <LikeButton
+                          postId={post.id}
+                          initialLiked={liked}
+                          initialCount={post.likesCount}
+                        />
+                        <FavoriteDialog
+                          postId={post.id}
+                          initialFolders={favoriteFolders}
+                          initialCount={post._count.favorites}
+                          isFavorited={favoriteFolders.some(
+                            (folder) => folder.isFavorited
+                          )}
+                        />
+                      </>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="prose dark:prose-invert mt-8 max-w-none">
+              <div
+                className={
+                  post.type === "markdown"
+                    ? "markdown-content"
+                    : "wysiwyg-content"
+                }
+                dangerouslySetInnerHTML={{
+                  __html: post.content,
+                }}
+              />
+            </div>
+
+            {!isDraft && (
+              <div className="mt-12" id="comments-section">
+                <h2 className="text-2xl font-bold mb-6">评论</h2>
+                <Comments
+                  postId={post.id}
+                  initialComments={post.comments}
+                  isLoggedIn={!!user}
+                />
+              </div>
+            )}
+
+            {isDraft && !isAuthor && (
+              <div className="mt-12 text-center text-muted-foreground">
+                <p>草稿状态下不支持评论、点赞和收藏功能</p>
+              </div>
+            )}
+          </article>
+        </div>
+      </PostActionsProvider>
     );
   } catch (error) {
     console.error("Error rendering post page:", error);

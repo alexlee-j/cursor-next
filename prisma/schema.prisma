@@ -28,6 +28,8 @@ model User {
   likes         Like[]
   favorites    Favorite[]
   favoriteFolders FavoriteFolder[]
+  followers     Follow[] @relation("Followers")
+  following     Follow[] @relation("Following")
 
   @@map("users")
 }
@@ -241,4 +243,18 @@ model Favorite {
 
   @@unique([postId, userId, folderId])
   @@map("favorites")
+}
+
+// 关注表
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("Followers", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }

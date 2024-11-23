@@ -24,15 +24,22 @@ export async function POST(
     }
 
     // 检查是否已经点赞
-    const existingLike = await prisma.like.findFirst({
+    const existingLike = await prisma.like.findUnique({
       where: {
-        postId,
-        userId: user.id,
+        postId_userId: {
+          postId,
+          userId: user.id,
+        },
       },
     });
 
     if (existingLike) {
-      return NextResponse.json({ error: "已经点过赞了" }, { status: 400 });
+      await prisma.like.delete({
+        where: {
+          id: existingLike.id,
+        },
+      });
+      return NextResponse.json({ liked: false });
     }
 
     // 创建点赞记录
@@ -43,7 +50,7 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ liked: true });
   } catch (error) {
     console.error("[LIKE_POST]", error);
     return NextResponse.json(

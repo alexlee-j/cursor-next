@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { cn } from "@/lib/utils";
+import { Loader2, Heart } from "lucide-react";
+import { useState } from "react";
+import { usePostActions } from "./post-actions-context";
 
 interface LikeButtonProps {
   postId: string;
@@ -17,41 +17,41 @@ export function LikeButton({
   initialLiked,
   initialCount,
 }: LikeButtonProps) {
-  const [liked, setLiked] = useState(initialLiked);
-  const [count, setCount] = useState(initialCount);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { liked, likesCount, setLiked, setLikesCount } = usePostActions();
 
-  const handleLike = async () => {
+  const toggleLike = async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/posts/${postId}/like`, {
-        method: liked ? "DELETE" : "POST",
+        method: "POST",
       });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast({
-            description: "请先登录后再点赞",
-            action: (
-              <a href="/login">
-                <Button variant="outline" size="sm">
-                  去登录
-                </Button>
-              </a>
-            ),
-          });
-          return;
-        }
-        throw new Error("操作失败");
+      if (response.status === 401) {
+        toast({
+          title: "请先登录",
+          variant: "destructive",
+        });
+        return;
       }
 
-      setLiked(!liked);
-      setCount(count + (liked ? -1 : 1));
-    } catch (error) {
+      if (!response.ok) {
+        throw new Error("点赞失败");
+      }
+
+      const { liked: newLiked } = await response.json();
+      setLiked(newLiked);
+      setLikesCount((prev) => (newLiked ? prev + 1 : prev - 1));
+
       toast({
+        title: newLiked ? "点赞成功" : "取消点赞成功",
+      });
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast({
+        title: "操作失败",
         variant: "destructive",
-        description: "操作失败，请稍后重试",
       });
     } finally {
       setIsLoading(false);
@@ -59,17 +59,21 @@ export function LikeButton({
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-8 px-2"
-      onClick={handleLike}
+    <button
+      onClick={toggleLike}
       disabled={isLoading}
+      className={`inline-flex items-center space-x-1 px-2 py-1 text-sm rounded-md transition-colors ${
+        liked ? "text-red-500" : "text-muted-foreground hover:text-red-500/80"
+      }`}
     >
-      <Heart
-        className={cn("h-4 w-4 mr-1", liked ? "fill-current text-red-500" : "")}
-      />
-      {count}
-    </Button>
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Heart
+          className={`h-4 w-4 ${liked ? "fill-red-500 text-red-500" : ""}`}
+        />
+      )}
+      <span>{likesCount}</span>
+    </button>
   );
 }
