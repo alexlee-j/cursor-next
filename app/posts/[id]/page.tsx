@@ -24,16 +24,20 @@ type PostWithRelations = Post & {
     content: string;
     createdAt: Date;
     user: {
+      id: string;
       name: string | null;
       email: string;
+      isAuthor?: boolean;
     };
     replies: {
       id: string;
       content: string;
       createdAt: Date;
       user: {
+        id: string;
         name: string | null;
         email: string;
+        isAuthor?: boolean;
       };
       replyTo: {
         name: string | null;
@@ -96,6 +100,7 @@ async function getPost(
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               },
@@ -107,6 +112,7 @@ async function getPost(
               include: {
                 user: {
                   select: {
+                    id: true,
                     name: true,
                     email: true,
                   },
@@ -228,8 +234,27 @@ async function getPost(
       followersCount = followers;
     }
 
+    // 处理评论数据，添加作者标识
+    const commentsWithAuthorFlag = post.comments.map((comment) => ({
+      ...comment,
+      user: {
+        ...comment.user,
+        isAuthor: comment.user.id === post.authorId,
+      },
+      replies: comment.replies.map((reply) => ({
+        ...reply,
+        user: {
+          ...reply.user,
+          isAuthor: reply.user.id === post.authorId,
+        },
+      })),
+    }));
+
     return {
-      post: postWithCounts,
+      post: {
+        ...postWithCounts,
+        comments: commentsWithAuthorFlag,
+      },
       liked,
       favoriteFolders,
       isFollowing,

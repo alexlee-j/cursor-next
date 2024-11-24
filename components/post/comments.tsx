@@ -7,6 +7,20 @@ import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 import { Comment } from "./comment";
 
+interface ReplyType {
+  id: string;
+  content: string;
+  createdAt: Date;
+  user: {
+    name: string | null;
+    email: string;
+  };
+  replyTo: {
+    name: string | null;
+    email: string;
+  };
+}
+
 interface CommentType {
   id: string;
   content: string;
@@ -15,11 +29,7 @@ interface CommentType {
     name: string | null;
     email: string;
   };
-  replies?: CommentType[];
-  replyTo?: {
-    name: string | null;
-    email: string;
-  };
+  replies: ReplyType[];
 }
 
 interface CommentsProps {
@@ -87,15 +97,19 @@ export function Comments({
 
   const handleReply = async (
     content: string,
-    parentId: string,
-    replyToId?: string
+    commentId: string,
+    replyToId: string
   ) => {
     const response = await fetch(`/api/posts/${postId}/comments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ content, parentId, replyToId }),
+      body: JSON.stringify({
+        content,
+        parentId: commentId,
+        replyToId,
+      }),
     });
 
     if (!response.ok) {
@@ -103,16 +117,15 @@ export function Comments({
     }
 
     const newReply = await response.json();
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === parentId
-          ? {
-              ...comment,
-              replies: [...(comment.replies || []), newReply],
-            }
-          : comment
-      )
-    );
+    if (!newReply.needsReview) {
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, replies: [...comment.replies, newReply] }
+            : comment
+        )
+      );
+    }
   };
 
   return (
