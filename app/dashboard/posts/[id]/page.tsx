@@ -14,17 +14,24 @@ interface PostPageProps {
 async function getPost(id: string) {
   const post = await prisma.post.findUnique({
     where: { id },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      type: true,
-      status: true,
-      authorId: true,
+    include: {
+      postTags: {
+        include: {
+          tag: true,
+        },
+      },
     },
   });
 
-  return post;
+  if (!post) return null;
+
+  return {
+    ...post,
+    tags: post.postTags.map((pt) => ({
+      id: pt.tag.id,
+      name: pt.tag.name,
+    })),
+  };
 }
 
 export default async function PostPage({ params }: PostPageProps) {
@@ -33,8 +40,7 @@ export default async function PostPage({ params }: PostPageProps) {
     redirect("/login");
   }
 
-  const id = await params.id;
-  const post = await getPost(id);
+  const post = await getPost(params.id);
 
   if (!post) {
     redirect("/dashboard/posts");

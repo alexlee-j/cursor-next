@@ -176,22 +176,23 @@ model Comment {
 
 // 标签表
 model Tag {
-  id       String    @id @default(cuid())
-  name     String    @unique
-  postTags PostTag[]
-
-  @@map("tags")
+  id        String     @id @default(cuid())
+  name      String     @unique
+  postTags  PostTag[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 // 文章标签关联表
 model PostTag {
-  postId String
-  tagId  String
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId     String
+  createdAt DateTime @default(now())
 
-  @@id([postId, tagId])
-  @@map("post_tags")
+  @@unique([postId, tagId])
 }
 
 // 访问统计表

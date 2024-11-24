@@ -49,6 +49,17 @@ type PostWithRelations = Post & {
     likes: number;
     favorites: number;
   };
+  postTags: {
+    tag: {
+      id: string;
+      name: string;
+    };
+  }[];
+  excerpt?: string;
+  tags?: {
+    id: string;
+    name: string;
+  }[];
 };
 
 async function getPost(
@@ -128,6 +139,11 @@ async function getPost(
                 createdAt: "asc",
               },
             },
+          },
+        },
+        postTags: {
+          include: {
+            tag: true,
           },
         },
         _count: {
@@ -253,6 +269,10 @@ async function getPost(
     return {
       post: {
         ...postWithCounts,
+        tags: post.postTags.map((pt) => ({
+          id: pt.tag.id,
+          name: pt.tag.name,
+        })),
         comments: commentsWithAuthorFlag,
       },
       liked,
@@ -330,6 +350,18 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                 <h1 className="text-4xl font-bold">{post.title}</h1>
                 {isDraft && <Badge variant="secondary">草稿</Badge>}
               </div>
+              {post.excerpt && (
+                <p className="text-lg text-muted-foreground">{post.excerpt}</p>
+              )}
+              {post.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <span>作者：{post.author.name || post.author.email}</span>

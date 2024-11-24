@@ -20,16 +20,17 @@ import { useToast } from "@/components/ui/use-toast";
 import { MarkdownEditor } from "./markdown-editor";
 import { RichTextEditor } from "./rich-text-editor";
 import { Preview } from "./preview";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { TagSelect } from "../tag-select";
+
+interface Tag {
+  id: string;
+  name: string;
+}
 
 const postFormSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
   content: z.string().min(1, { message: "内容不能为空" }),
+  excerpt: z.string().optional(),
 });
 
 type PostFormValues = z.infer<typeof postFormSchema>;
@@ -39,8 +40,10 @@ interface PostEditorProps {
     id: string;
     title: string;
     content: string;
+    excerpt?: string;
     type: string;
     status: string;
+    tags: Tag[];
   };
 }
 
@@ -52,12 +55,14 @@ export function PostEditor({ post }: PostEditorProps) {
   );
   const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(post?.tags || []);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postFormSchema),
     defaultValues: {
       title: post?.title || "",
       content: post?.content || "",
+      excerpt: post?.excerpt || "",
     },
   });
 
@@ -79,6 +84,7 @@ export function PostEditor({ post }: PostEditorProps) {
           ...data,
           type: editorType,
           status,
+          tags: selectedTags,
         }),
       });
 
@@ -126,6 +132,24 @@ export function PostEditor({ post }: PostEditorProps) {
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="excerpt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>简介</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="输入文章简介（可选）"
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as "editor" | "preview")}
@@ -167,6 +191,13 @@ export function PostEditor({ post }: PostEditorProps) {
                     <FormMessage />
                   </FormItem>
                 )}
+              />
+            </div>
+            <div className="space-y-4">
+              <FormLabel>标签</FormLabel>
+              <TagSelect
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
               />
             </div>
           </TabsContent>
