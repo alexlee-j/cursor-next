@@ -33,6 +33,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 只记录文章页面的访问
+  if (request.nextUrl.pathname.startsWith("/posts/")) {
+    try {
+      await fetch(`${request.nextUrl.origin}/api/analytics`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          path: request.nextUrl.pathname,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to record page view:", error);
+    }
+  }
+
   return NextResponse.next();
 }
 

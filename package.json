@@ -11,7 +11,8 @@
     "sync-counts": "ts-node scripts/sync-counts.ts",
     "create-default-folders": "cross-env ts-node --project tsconfig.scripts.json scripts/create-default-folders.ts",
     "manage-roles": "ts-node --project tsconfig.scripts.json scripts/manage-roles.ts",
-    "init-tags": "ts-node --project tsconfig.scripts.json scripts/init-tags.ts"
+    "init-tags": "ts-node --project tsconfig.scripts.json scripts/init-tags.ts",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -71,7 +72,7 @@
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
-    "prisma": "^5.10.2",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

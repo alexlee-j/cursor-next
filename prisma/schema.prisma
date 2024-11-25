@@ -37,6 +37,9 @@ model User {
   repliedTo     Comment[] @relation("CommentReplyTo")
   receivedReplies Comment[] @relation("CommentRepliedBy")
 
+  // 添加 pageViews 关系字段
+  pageViews     PageView[]
+
   @@map("users")
 }
 
@@ -285,4 +288,18 @@ model OperationLog {
   createdAt   DateTime @default(now())
 
   @@map("operation_logs")
+}
+
+// 添加 PageView 模型
+model PageView {
+  id        String   @id @default(cuid())
+  path      String   // 访问的路径
+  viewedAt  DateTime @default(now())
+  ip        String?  // 访问者IP（可选）
+  userAgent String?  // 浏览器信息（可选）
+  userId    String?  // 访问者ID（可选）
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([viewedAt])
+  @@index([path])
 }
