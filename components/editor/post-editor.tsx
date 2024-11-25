@@ -7,8 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { TagSelect } from "./tag-select";
 
 interface PostEditorProps {
   initialData?: {
@@ -16,7 +14,6 @@ interface PostEditorProps {
     title: string;
     content: string;
     excerpt?: string;
-    tags?: string[];
     type: "markdown" | "richtext";
   };
   mode?: "create" | "edit";
@@ -26,7 +23,6 @@ export function PostEditor({ initialData, mode = "create" }: PostEditorProps) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [excerpt, setExcerpt] = useState(initialData?.excerpt || "");
-  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -42,27 +38,26 @@ export function PostEditor({ initialData, mode = "create" }: PostEditorProps) {
 
     try {
       setIsSubmitting(true);
-      const url =
-        mode === "edit" ? `/api/posts/${initialData?.id}` : "/api/posts";
-      const method = mode === "edit" ? "PATCH" : "POST";
 
-      const response = await fetch(url, {
-        method,
+      // 构建基本数据
+      const postData = {
+        title,
+        content,
+        excerpt,
+        type: "markdown" as const,
+        status,
+      };
+
+      const response = await fetch("/api/posts", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          title,
-          content,
-          excerpt,
-          tags,
-          type: "markdown",
-          status,
-        }),
+        body: JSON.stringify(postData),
       });
 
       if (!response.ok) {
-        throw new Error("提交失败");
+        throw new Error(await response.text());
       }
 
       const data = await response.json();
@@ -70,10 +65,9 @@ export function PostEditor({ initialData, mode = "create" }: PostEditorProps) {
         title: status === "PUBLISHED" ? "发布成功" : "保存成功",
       });
 
-      // 跳转到文章详情页
       router.push(`/posts/${data.id}`);
     } catch (error) {
-      console.error("Error submitting post:", error);
+      console.error("Error:", error);
       toast({
         title: "提交失败",
         variant: "destructive",
@@ -100,10 +94,6 @@ export function PostEditor({ initialData, mode = "create" }: PostEditorProps) {
           onChange={(e) => setExcerpt(e.target.value)}
           rows={3}
         />
-      </div>
-
-      <div className="space-y-2">
-        <TagSelect selectedTags={tags} onChange={setTags} />
       </div>
 
       <div className="space-y-2">

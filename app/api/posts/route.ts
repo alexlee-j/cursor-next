@@ -20,58 +20,72 @@ const postSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  console.log("Received POST request");
   try {
     const user = await checkAuth();
     if (!user) {
       return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const json = await req.json();
-    const body = postSchema.parse(json);
+    const body = await req.json();
+    console.log("Received request body:", body);
 
-    console.log("Received post data:", body);
+    const result = postSchema.safeParse(body);
+    if (!result.success) {
+      console.log("Validation failed:", result.error.errors);
+      return NextResponse.json(
+        {
+          error: "数据验证失败",
+          details: result.error.errors,
+        },
+        { status: 400 }
+      );
+    }
 
-    const post = await prisma.post.create({
-      data: {
-        title: body.title,
-        content: body.content,
-        excerpt: body.excerpt,
-        type: body.type,
-        status: body.status,
-        authorId: user.id,
-        postTags: {
-          create:
-            body.tags?.map((tag) => ({
+    const { tags, ...postData } = result.data;
+
+    try {
+      const post = await prisma.post.create({
+        data: {
+          ...postData,
+          authorId: user.id,
+          postTags: {
+            create: tags?.map((tag) => ({
               tag: {
                 connect: {
                   id: tag.id,
                 },
               },
-            })) || [],
-        },
-      },
-      include: {
-        postTags: {
-          include: {
-            tag: true,
+            })),
           },
         },
-      },
-    });
+        include: {
+          postTags: {
+            include: {
+              tag: true,
+            },
+          },
+        },
+      });
 
-    console.log("Created post:", post);
+      const formattedPost = {
+        ...post,
+        tags: post.postTags.map((pt) => pt.tag),
+        postTags: undefined,
+      };
 
-    return NextResponse.json(post, { status: 201 });
-  } catch (error) {
-    console.error("创建文章失败:", error);
-    if (error instanceof z.ZodError) {
+      return NextResponse.json(formattedPost);
+    } catch (dbError) {
+      console.error("Database error:", dbError);
       return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
+        { error: "数据库操作失败", details: dbError.message },
+        { status: 500 }
       );
     }
+  } catch (error) {
+    console.error("Server error:", error);
     return NextResponse.json(
-      { error: "创建文章失败，请稍后重试" },
+      { error: "创建文章失败", details: error.message },
       { status: 500 }
     );
   }

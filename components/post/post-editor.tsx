@@ -66,14 +66,15 @@ export function PostEditor({ post }: PostEditorProps) {
     },
   });
 
-  async function handleSubmit(
+  const onSubmit = async (
     data: PostFormValues,
     status: "DRAFT" | "PUBLISHED"
-  ) {
+  ) => {
     try {
       setIsSubmitting(true);
-      const url = post ? `/api/posts/${post.id}` : "/api/posts";
-      const method = post ? "PATCH" : "POST";
+      console.log("post--------", post);
+      const url = post?.id ? `/api/posts/${post.id}` : "/api/posts";
+      const method = post?.id ? "PATCH" : "POST";
 
       const response = await fetch(url, {
         method,
@@ -86,10 +87,26 @@ export function PostEditor({ post }: PostEditorProps) {
           status,
           tags: selectedTags,
         }),
+        cache: "no-store",
       });
+      console.log("Response:", response);
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+
+      let errorData;
+      try {
+        errorData = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error("Failed to parse response:", e);
+        errorData = { error: "Invalid server response" };
+      }
 
       if (!response.ok) {
-        throw new Error(post ? "更新失败" : "发布失败");
+        throw new Error(errorData.error || (post ? "更新失败" : "发布失败"));
       }
 
       toast({
@@ -100,6 +117,7 @@ export function PostEditor({ post }: PostEditorProps) {
       router.push("/dashboard/posts");
       router.refresh();
     } catch (error) {
+      console.error("Submit error:", error);
       toast({
         variant: "destructive",
         title: post ? "更新失败" : "发布失败",
@@ -108,16 +126,13 @@ export function PostEditor({ post }: PostEditorProps) {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   const content = form.watch("content");
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit((data) => handleSubmit(data, "DRAFT"))}
-        className="space-y-8"
-      >
+      <form className="space-y-8">
         <FormField
           control={form.control}
           name="title"
@@ -218,18 +233,14 @@ export function PostEditor({ post }: PostEditorProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() =>
-              form.handleSubmit((data) => handleSubmit(data, "DRAFT"))()
-            }
+            onClick={form.handleSubmit((data) => onSubmit(data, "DRAFT"))}
             disabled={isSubmitting}
           >
             保存草稿
           </Button>
           <Button
             type="button"
-            onClick={() =>
-              form.handleSubmit((data) => handleSubmit(data, "PUBLISHED"))()
-            }
+            onClick={form.handleSubmit((data) => onSubmit(data, "PUBLISHED"))}
             disabled={isSubmitting}
           >
             {isSubmitting ? "发布中..." : "发布文章"}

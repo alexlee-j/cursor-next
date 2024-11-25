@@ -7,7 +7,14 @@ const updatePostSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
   content: z.string().min(1, { message: "内容不能为空" }),
   excerpt: z.string().optional(),
-  tags: z.array(z.string()).optional(),
+  tags: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+      })
+    )
+    .optional(),
   type: z.enum(["markdown", "richtext"]),
   status: z.enum(["DRAFT", "PUBLISHED"]),
 });
@@ -61,17 +68,34 @@ export async function PATCH(
   }
 
   try {
-    const { title, content, excerpt, type, status, tags } = await req.json();
+    const body = await req.json();
 
-    // 打印接收到的更新数据
-    console.log("Updating post with data:", {
-      title,
-      content,
-      excerpt,
-      type,
-      status,
-      tags,
+    // 使用 schema 验证输入数据
+    const result = updatePostSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: result.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { title, content, excerpt, type, status, tags } = result.data;
+
+    // 检查文章是否存在且属于当前用户
+    const existingPost = await prisma.post.findUnique({
+      where: { id: params.id },
     });
+
+    if (!existingPost) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    if (existingPost.authorId !== user.id) {
+      return NextResponse.json(
+        { error: "You don't have permission to update this post" },
+        { status: 403 }
+      );
+    }
 
     // 首先删除现有的标签关联
     await prisma.postTag.deleteMany({
@@ -93,7 +117,7 @@ export async function PATCH(
         type,
         status,
         postTags: {
-          create: tags?.map((tag: { id: string }) => ({
+          create: tags?.map((tag) => ({
             tag: {
               connect: {
                 id: tag.id,
@@ -110,9 +134,6 @@ export async function PATCH(
         },
       },
     });
-
-    // 打印更新后的文章数据
-    console.log("Updated post:", post);
 
     return NextResponse.json(post);
   } catch (error) {
