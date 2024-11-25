@@ -17,38 +17,45 @@ interface DashboardData {
 }
 
 interface AnalyticsItem {
-  viewedAt: Date;
-  _count: {
-    id: number;
-  };
+  date: string;
+  count: number;
 }
 
 async function getDashboardData(): Promise<DashboardData> {
   try {
-    const [publishedPosts, draftPosts, totalComments, analytics] =
-      await Promise.all([
-        prisma.post.count({
-          where: { status: "PUBLISHED" },
-        }),
-        prisma.post.count({
-          where: { status: "DRAFT" },
-        }),
-        prisma.comment.count(),
-        // 获取访问统计数据
-        prisma.$queryRaw<AnalyticsItem[]>`
-          SELECT DATE_TRUNC('day', "viewedAt") as "viewedAt",
-                 COUNT(id) as "_count__id"
-          FROM "PageView"
-          WHERE "viewedAt" >= NOW() - INTERVAL '7 days'
-          GROUP BY DATE_TRUNC('day', "viewedAt")
-          ORDER BY "viewedAt" ASC
-        `,
-      ]);
+    const [publishedPosts, draftPosts, totalComments] = await Promise.all([
+      prisma.post.count({
+        where: { status: "PUBLISHED" },
+      }),
+      prisma.post.count({
+        where: { status: "DRAFT" },
+      }),
+      prisma.comment.count(),
+    ]);
 
-    // 计算总访问量
-    const totalViews = await prisma.$queryRaw<[{ count: number }]>`
-      SELECT COUNT(*) as count FROM "PageView"
-    `;
+    // 获取7天前的日期
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    // 使用 Prisma 获取访问统计数据
+    const analytics = await prisma.pageView.groupBy({
+      by: ["viewedAt"],
+      where: {
+        viewedAt: {
+          gte: sevenDaysAgo,
+        },
+      },
+      _count: {
+        id: true,
+      },
+      orderBy: {
+        viewedAt: "asc",
+      },
+    });
+
+    // 获取总访问量
+    const totalViews = await prisma.pageView.count();
 
     // 处理最近7天的访问数据
     const dates = Array.from({ length: 7 }, (_, i) => {
@@ -58,6 +65,7 @@ async function getDashboardData(): Promise<DashboardData> {
       return date;
     }).reverse();
 
+    // 创建日期到访问量的映射
     const viewsMap = new Map(
       analytics.map((item) => [
         item.viewedAt.toISOString().split("T")[0],
@@ -70,11 +78,13 @@ async function getDashboardData(): Promise<DashboardData> {
       views: viewsMap.get(date.toISOString().split("T")[0]) || 0,
     }));
 
+    console.log("analytics data:", analytics);
+
     return {
       totalPosts: publishedPosts,
       draftPosts,
       totalComments,
-      totalViews: Number(totalViews[0]?.count || 0),
+      totalViews: totalViews,
       recentViews,
     };
   } catch (error) {
