@@ -26,15 +26,11 @@ interface FavoriteDialogProps {
     isDefault: boolean;
     isFavorited: boolean;
   }[];
-  initialCount: number;
-  isFavorited: boolean;
 }
 
 export function FavoriteDialog({
   postId,
   initialFolders,
-  initialCount,
-  isFavorited,
 }: FavoriteDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [folders, setFolders] = useState(initialFolders || []);
@@ -42,7 +38,7 @@ export function FavoriteDialog({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newFolder, setNewFolder] = useState({ name: "", description: "" });
   const { toast } = useToast();
-  const { setIsFavorited, setFavoritesCount } = usePostActions();
+  const { setIsFavorited, setFavoritesCount, isFavorited: globalIsFavorited, favoritesCount } = usePostActions();
 
   const toggleFavorite = async (folderId: string) => {
     try {
@@ -156,8 +152,6 @@ export function FavoriteDialog({
       </Dialog>
     );
   }
-
-  const { isFavorited: globalIsFavorited, favoritesCount } = usePostActions();
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

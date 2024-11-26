@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Folder, MoreHorizontal, Star } from "lucide-react";
+import { MoreHorizontal, Star } from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -93,7 +93,7 @@ export function FolderList({ initialFolders }: FolderListProps) {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 <div className="flex items-center space-x-2">
-                  <Folder className="h-4 w-4" />
+                  <Star className="h-4 w-4" />
                   <span>{folder.name}</span>
                   {folder.isDefault && (
                     <span className="text-xs text-muted-foreground">

@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { redirect } from "next/navigation";
 
 export async function verifyEmail(token: string) {
   try {

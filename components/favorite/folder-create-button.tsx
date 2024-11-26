@@ -16,8 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
+interface FolderType {
+  id: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+}
+
 interface FolderCreateButtonProps {
-  onFolderCreated?: (folder: any) => void;
+  onFolderCreated?: (folder: FolderType) => void;
 }
 
 export function FolderCreateButton({

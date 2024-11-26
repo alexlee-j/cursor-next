@@ -2,11 +2,10 @@
 
 import { PostCard } from "./post-card";
 import { Pagination } from "../ui/pagination";
-import { Button } from "../ui/button";
 import { PenLine } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface Post {
   id: string;
@@ -36,14 +35,7 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const page = searchParams.get("page");
-    if (page) {
-      fetchPosts(parseInt(page, 10));
-    }
-  }, [searchParams]);
-
-  const fetchPosts = async (page: number) => {
+  const fetchPosts = useCallback(async (page: number) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/posts?page=${page}&userId=${userId}`);
@@ -56,7 +48,14 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    const page = searchParams.get("page");
+    if (page) {
+      fetchPosts(parseInt(page, 10));
+    }
+  }, [searchParams, fetchPosts]);
 
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -73,9 +72,7 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
           开始创作您的第一篇文章吧！
         </p>
         <Link href="/dashboard/posts/new">
-          <Button size="sm" className="mt-2">
-            写文章
-          </Button>
+          写文章
         </Link>
       </div>
     );

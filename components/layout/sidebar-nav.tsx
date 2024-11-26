@@ -8,10 +8,10 @@ import { menuItems } from "@/lib/config/menus";
 import { useUserPermissions } from "@/hooks/use-user-permissions";
 
 interface SidebarNavProps {
-  userId: string;
+  className?: string;
 }
 
-export function SidebarNav({ userId }: SidebarNavProps) {
+export function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname();
   const { permissions = [], isLoading } = useUserPermissions();
 
@@ -36,7 +36,7 @@ export function SidebarNav({ userId }: SidebarNavProps) {
   });
 
   return (
-    <nav className="flex flex-col gap-2">
+    <nav className={cn("flex flex-col gap-2", className)}>
       {visibleMenuItems.map((item) => (
         <Link
           key={item.href}

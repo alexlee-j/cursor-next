@@ -84,11 +84,6 @@ function ReplyItem({
       toast({
         title: "回复成功",
       });
-    } catch (error) {
-      toast({
-        title: "回复失败",
-        variant: "destructive",
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -203,11 +198,6 @@ export function Comment({
       setIsReplying(false);
       toast({
         title: "回复成功",
-      });
-    } catch (error) {
-      toast({
-        title: "回复失败",
-        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
