@@ -96,14 +96,25 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const userId = searchParams.get("userId");
     const skip = (page - 1) * limit;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "缺少用户ID参数" },
+        { status: 400 }
+      );
+    }
+
+    const where = { authorId: userId };
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
+        where,
         take: limit,
         skip,
         orderBy: {
-          createdAt: "desc",
+          updatedAt: "desc",
         },
         include: {
           author: {
@@ -126,7 +137,7 @@ export async function GET(req: NextRequest) {
           },
         },
       }),
-      prisma.post.count(),
+      prisma.post.count({ where }),
     ]);
 
     const formattedPosts = posts.map((post) => ({
@@ -141,12 +152,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       posts: formattedPosts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error("获取文章列表失败:", error);

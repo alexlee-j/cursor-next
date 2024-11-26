@@ -12,13 +12,16 @@ interface ReplyType {
   content: string;
   createdAt: Date;
   user: {
+    id: string;
     name: string | null;
     email: string;
+    isAuthor?: boolean;
   };
   replyTo: {
+    id: string;
     name: string | null;
     email: string;
-  };
+  } | null;
 }
 
 interface CommentType {
@@ -26,10 +29,14 @@ interface CommentType {
   content: string;
   createdAt: Date;
   user: {
+    id: string;
     name: string | null;
     email: string;
+    isAuthor?: boolean;
   };
   replies: ReplyType[];
+  parentId?: string;
+  depth?: number;
 }
 
 interface CommentsProps {
@@ -130,7 +137,7 @@ export function Comments({
 
   return (
     <div className="space-y-6">
-      {isLoggedIn && (
+      {isLoggedIn ? (
         <div className="space-y-4">
           <Textarea
             placeholder="写下你的评论..."
@@ -147,6 +154,13 @@ export function Comments({
               )}
             </Button>
           </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center space-y-4 p-6 bg-muted/50 rounded-lg">
+          <p className="text-muted-foreground">登录后参与评论讨论</p>
+          <Button asChild>
+            <a href="/login">去登录</a>
+          </Button>
         </div>
       )}
 

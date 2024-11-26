@@ -1,6 +1,4 @@
 import { checkAuth } from "@/lib/auth";
-import { hasPermission } from "@/lib/permissions";
-import { PERMISSIONS } from "@/lib/constants/permissions";
 import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
@@ -50,21 +48,17 @@ async function getPosts(userId: string, page: number = 1) {
   };
 }
 
-export default async function PostsPage({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
+export default async function PostsPage() {
   const user = await checkAuth();
   if (!user) {
     redirect("/login");
   }
 
-  const canManageAllPosts = await hasPermission(user, PERMISSIONS.POST.MANAGE);
-
-  const pageParam = searchParams?.page;
-  const page = pageParam ? parseInt(pageParam as string, 10) : 1;
-  const { posts, currentPage, totalPages } = await getPosts(user.id, page);
+  // 获取初始数据
+  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/posts?userId=${user.id}`, {
+    cache: 'no-store',
+  });
+  const data = await response.json();
 
   return (
     <DashboardShell>
@@ -77,9 +71,10 @@ export default async function PostsPage({
       </div>
       <div className="mt-4 md:mt-8">
         <PostList
-          posts={posts}
-          currentPage={currentPage}
-          totalPages={totalPages}
+          initialPosts={data.posts}
+          currentPage={data.currentPage}
+          totalPages={data.totalPages}
+          userId={user.id}
         />
       </div>
     </DashboardShell>

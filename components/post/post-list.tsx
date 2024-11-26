@@ -6,30 +6,60 @@ import { Button } from "../ui/button";
 import { PenLine } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-interface PostListProps {
-  posts: {
-    id: string;
-    title: string;
-    status: "DRAFT" | "PUBLISHED";
-    createdAt: Date;
-    updatedAt: Date;
-    viewCount: number;
-    likesCount?: number;
-    commentsCount?: number;
-    bookmarksCount?: number;
-  }[];
-  currentPage: number;
-  totalPages: number;
+interface Post {
+  id: string;
+  title: string;
+  status: "DRAFT" | "PUBLISHED";
+  createdAt: Date;
+  updatedAt: Date;
+  viewCount: number;
+  likesCount?: number;
+  commentsCount?: number;
+  bookmarksCount?: number;
 }
 
-export function PostList({ posts, currentPage, totalPages }: PostListProps) {
+interface PostListProps {
+  initialPosts: Post[];
+  currentPage: number;
+  totalPages: number;
+  userId: string;
+}
+
+export function PostList({ initialPosts, currentPage: initialPage, totalPages: initialTotalPages, userId }: PostListProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const page = searchParams.get("page");
+    if (page) {
+      fetchPosts(parseInt(page, 10));
+    }
+  }, [searchParams]);
+
+  const fetchPosts = async (page: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/posts?page=${page}&userId=${userId}`);
+      const data = await response.json();
+      setPosts(data.posts);
+      setCurrentPage(data.currentPage);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set("page", page.toString());
     router.push(`${pathname}?${params.toString()}`);
   };
@@ -53,11 +83,17 @@ export function PostList({ posts, currentPage, totalPages }: PostListProps) {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="space-y-3 md:space-y-4">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      ) : (
+        <div className="space-y-3 md:space-y-4">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
       {totalPages > 1 && (
         <div className="mt-4 md:mt-6">
           <Pagination

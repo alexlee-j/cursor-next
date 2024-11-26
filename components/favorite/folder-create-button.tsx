@@ -6,6 +6,7 @@ import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -73,9 +74,12 @@ export function FolderCreateButton({
           新建收藏夹
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>新建收藏夹</DialogTitle>
+          <DialogDescription>
+            创建一个新的收藏夹来组织您喜欢的文章。
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

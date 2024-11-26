@@ -16,11 +16,6 @@ interface DashboardData {
   }[];
 }
 
-interface AnalyticsItem {
-  date: string;
-  count: number;
-}
-
 async function getDashboardData(): Promise<DashboardData> {
   try {
     const [publishedPosts, draftPosts, totalComments] = await Promise.all([

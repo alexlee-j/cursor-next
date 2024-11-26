@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -144,6 +145,9 @@ export function FavoriteDialog({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>添加到收藏夹</DialogTitle>
+            <DialogDescription>
+              暂无收藏夹，您可以创建一个新的收藏夹来保存文章。
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4">
             <p className="text-muted-foreground">暂无收藏夹，请先创建收藏夹</p>
@@ -179,6 +183,9 @@ export function FavoriteDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>添加到收藏夹</DialogTitle>
+          <DialogDescription>
+            选择一个收藏夹来保存这篇文章，或创建一个新的收藏夹。
+          </DialogDescription>
         </DialogHeader>
 
         {showCreateForm ? (

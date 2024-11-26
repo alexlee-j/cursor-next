@@ -41,12 +41,10 @@ interface CommentProps {
     isAuthor?: boolean;
   };
   replies: ReplyType[];
-  onReply: (
-    content: string,
-    commentId: string,
-    replyToUserId: string
-  ) => Promise<void>;
+  onReply: (content: string, commentId: string, replyToUserId: string) => Promise<void>;
   isLoggedIn: boolean;
+  parentId?: string;
+  depth?: number;
 }
 
 const AuthorBadge = () => (
@@ -180,6 +178,8 @@ export function Comment({
   replies,
   onReply,
   isLoggedIn,
+  parentId,
+  depth,
 }: CommentProps) {
   const [isReplying, setIsReplying] = useState(false);
   const [showReplies, setShowReplies] = useState(false);

@@ -296,10 +296,17 @@ export default async function PostPage({ params }: { params: { id: string } }) {
   try {
     // 尝试获取用户信息，但不强制要求登录
     const user = await checkAuth().catch(() => null);
-    const postId = params.id;
+    
+    // 等待并解构 params
+    const { id } = await params;
+    
+    // 确保 id 存在
+    if (!id) {
+      redirect("/");
+    }
 
     const { post, liked, favoriteFolders, isFollowing, followersCount } =
-      await getPost(postId, user?.id);
+      await getPost(id, user?.id);
 
     // 如果文章不存在或无权访问，重定向到首页
     if (!post) {

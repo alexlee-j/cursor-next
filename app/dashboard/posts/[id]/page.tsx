@@ -40,7 +40,15 @@ export default async function PostPage({ params }: PostPageProps) {
     redirect("/login");
   }
 
-  const post = await getPost(params.id);
+  // 等待并解构 params
+  const { id } = await params;
+
+  // 确保 id 存在
+  if (!id) {
+    redirect("/dashboard/posts");
+  }
+
+  const post = await getPost(id);
 
   if (!post) {
     redirect("/dashboard/posts");
