@@ -9,6 +9,7 @@ import { useUserPermissions } from "@/hooks/use-user-permissions";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -90,6 +91,9 @@ export function DashboardNav() {
         <SheetContent side="left" className="w-[240px] sm:w-[280px]">
           <SheetHeader>
             <SheetTitle>导航菜单</SheetTitle>
+            <SheetDescription>
+              选择要访问的页面
+            </SheetDescription>
           </SheetHeader>
           <nav className="mt-4">
             <NavLinks />

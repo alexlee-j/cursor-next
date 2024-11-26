@@ -35,6 +35,8 @@ const postFormSchema = z.object({
 
 type PostFormValues = z.infer<typeof postFormSchema>;
 
+type PostStatus = "DRAFT" | "PUBLISHED";
+
 interface PostEditorProps {
   post?: {
     id: string;
@@ -42,7 +44,7 @@ interface PostEditorProps {
     content: string;
     excerpt?: string;
     type: string;
-    status: string;
+    status: PostStatus;
     tags: Tag[];
   };
 }
@@ -230,20 +232,22 @@ export function PostEditor({ post }: PostEditorProps) {
           >
             取消
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={form.handleSubmit((data) => onSubmit(data, "DRAFT"))}
-            disabled={isSubmitting}
-          >
-            保存草稿
-          </Button>
+          {(!post || post.status === "DRAFT") && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={form.handleSubmit((data) => onSubmit(data, "DRAFT"))}
+              disabled={isSubmitting}
+            >
+              保存草稿
+            </Button>
+          )}
           <Button
             type="button"
             onClick={form.handleSubmit((data) => onSubmit(data, "PUBLISHED"))}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "发布中..." : "发布文章"}
+            {isSubmitting ? "发布中..." : (post?.status === "PUBLISHED" ? "更新文章" : "发布文章")}
           </Button>
         </div>
       </form>

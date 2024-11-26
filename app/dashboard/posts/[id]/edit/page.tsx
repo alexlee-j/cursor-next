@@ -2,8 +2,16 @@ import { checkAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PostEditor } from "@/components/post/post-editor";
+import type { PostStatus } from "@/components/post/post-editor";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
+
+interface PostTag {
+  tag: {
+    id: string;
+    name: string;
+  }
+}
 
 export default async function EditPostPage({
   params,
@@ -33,15 +41,10 @@ export default async function EditPostPage({
     redirect("/dashboard/posts");
   }
 
-  console.log("Raw post data:", JSON.stringify(post, null, 2));
-  console.log("Post tags:", post.postTags);
-
-  const tags = post.postTags.map((pt) => ({
+  const tags = post.postTags.map((pt: PostTag) => ({
     id: pt.tag.id,
     name: pt.tag.name,
   }));
-
-  console.log("Processed tags:", tags);
 
   return (
     <DashboardShell>
@@ -54,7 +57,7 @@ export default async function EditPostPage({
             content: post.content,
             excerpt: post.excerpt || "",
             type: post.type,
-            status: post.status,
+            status: post.status as PostStatus,
             tags: tags,
           }}
         />
