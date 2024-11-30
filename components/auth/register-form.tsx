@@ -41,15 +41,23 @@ export function RegisterForm() {
   });
 
   const router = useRouter();
+  const [isRegistered, setIsRegistered] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
     try {
+      const { email, password, name } = values;
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+        }),
       });
 
       const data = await response.json();
@@ -63,13 +71,15 @@ export function RegisterForm() {
         description: "请查看您的邮箱进行验证",
       });
 
-      router.push(`/verify-email?userId=${data.userId}`);
+      setIsRegistered(true); // 显示注册成功提示
     } catch (error) {
       toast({
         variant: "destructive",
         title: "注册失败",
         description: error instanceof Error ? error.message : "发生未知错误",
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -115,9 +125,14 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
-          注册
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "注册中..." : "注册"}
         </Button>
+        {isRegistered && (
+          <div className="text-sm text-green-600 mt-2">
+            注册成功，请查看您的邮箱进行验证。
+          </div>
+        )}
       </form>
     </Form>
   );

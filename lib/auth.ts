@@ -1,30 +1,31 @@
 import { cookies } from "next/headers";
 import { verify } from "jsonwebtoken";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/utils/logger";
 
-export async function checkAuth() {
-  console.log("Running checkAuth...");
+export async function checkAuth(required = false) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
 
-    console.log("Token in checkAuth:", token?.value ? "exists" : "not found");
-
     if (!token) {
-      console.log("No token found in checkAuth");
+      logger.warn("No token found in cookies");
       return null;
     }
 
     try {
-      const decoded = verify(
-        token.value,
-        process.env.JWT_SECRET || "secret"
-      ) as {
+      const decoded = verify(token.value, process.env.JWT_SECRET || "secret") as {
         id: string;
         email: string;
+        isVerified: boolean;
+        exp: number;
       };
 
-      console.log("Token decoded:", decoded);
+      logger.info("Token decoded successfully", { 
+        userId: decoded.id,
+        email: decoded.email,
+        isVerified: decoded.isVerified
+      });
 
       const user = await prisma.user.findUnique({
         where: {
@@ -34,22 +35,75 @@ export async function checkAuth() {
           id: true,
           email: true,
           name: true,
+          emailVerified: true,
+          userRoles: {
+            select: {
+              role: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  rolePermissions: {
+                    select: {
+                      permission: {
+                        select: {
+                          name: true,
+                          description: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
       });
 
       if (!user) {
-        console.log("User not found for id:", decoded.id);
+        logger.error("User not found in database", { userId: decoded.id });
         return null;
       }
 
-      console.log("User found:", user);
-      return user;
-    } catch (error) {
-      console.error("Token verification failed in checkAuth:", error);
+      if (!user.emailVerified) {
+        logger.warn("User email not verified", { userId: user.id, email: user.email });
+        return null;
+      }
+
+      const roles = user.userRoles.map(ur => ({
+        id: ur.role.id,
+        name: ur.role.name,
+        description: ur.role.description,
+        permissions: ur.role.rolePermissions.map(rp => ({
+          name: rp.permission.name,
+          description: rp.permission.description
+        }))
+      }));
+
+      logger.info("User authenticated successfully", { 
+        userId: user.id,
+        email: user.email,
+        roles: roles.map(r => r.name)
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        roles
+      };
+    } catch (verifyError) {
+      logger.error("Token verification failed", {
+        error: verifyError instanceof Error ? verifyError.message : String(verifyError)
+      });
       return null;
     }
   } catch (error) {
-    console.error("Auth check failed:", error);
+    logger.error("Authentication failed", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return null;
   }
 }

@@ -74,12 +74,9 @@ export function PostEditor({ post }: PostEditorProps) {
   ) => {
     try {
       setIsSubmitting(true);
-      console.log("post--------", post);
-      const url = post?.id ? `/api/posts/${post.id}` : "/api/posts";
-      const method = post?.id ? "PATCH" : "POST";
 
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(post?.id ? `/api/posts/${post.id}` : "/api/posts", {
+        method: post?.id ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -89,30 +86,15 @@ export function PostEditor({ post }: PostEditorProps) {
           status,
           tags: selectedTags,
         }),
-        cache: "no-store",
       });
-      console.log("Response:", response);
-
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
-
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
-
-      let errorData;
-      try {
-        errorData = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error("Failed to parse response:", e);
-        errorData = { error: "Invalid server response" };
-      }
 
       if (!response.ok) {
-        throw new Error(errorData.error || (post ? "更新失败" : "发布失败"));
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "操作失败，请稍后重试");
       }
 
       toast({
-        title: post ? "更新成功" : "发布成功",
+        title: post?.id ? "更新成功" : "发布成功",
         description: status === "PUBLISHED" ? "文章已发布" : "文章已保存为草稿",
       });
 
@@ -122,7 +104,7 @@ export function PostEditor({ post }: PostEditorProps) {
       console.error("Submit error:", error);
       toast({
         variant: "destructive",
-        title: post ? "更新失败" : "发布失败",
+        title: "操作失败",
         description: error instanceof Error ? error.message : "请稍后重试",
       });
     } finally {
@@ -154,45 +136,39 @@ export function PostEditor({ post }: PostEditorProps) {
           name="excerpt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>简介</FormLabel>
+              <FormLabel>摘要</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="输入文章简介（可选）"
-                  {...field}
-                  value={field.value || ""}
-                />
+                <Input placeholder="输入文章摘要（可选）" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as "editor" | "preview")}
-        >
-          <TabsList>
-            <TabsTrigger value="editor">编辑</TabsTrigger>
-            <TabsTrigger value="preview">预览</TabsTrigger>
-          </TabsList>
-          <TabsContent value="editor" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Button
-                  type="button"
-                  variant={editorType === "markdown" ? "default" : "outline"}
-                  onClick={() => setEditorType("markdown")}
-                >
-                  Markdown
-                </Button>
-                <Button
-                  type="button"
-                  variant={editorType === "richtext" ? "default" : "outline"}
-                  onClick={() => setEditorType("richtext")}
-                >
-                  富文本
-                </Button>
-              </div>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Button
+              type="button"
+              variant={editorType === "markdown" ? "default" : "outline"}
+              onClick={() => setEditorType("markdown")}
+            >
+              Markdown
+            </Button>
+            <Button
+              type="button"
+              variant={editorType === "richtext" ? "default" : "outline"}
+              onClick={() => setEditorType("richtext")}
+            >
+              富文本
+            </Button>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "editor" | "preview")}>
+            <TabsList>
+              <TabsTrigger value="editor">编辑</TabsTrigger>
+              <TabsTrigger value="preview">预览</TabsTrigger>
+            </TabsList>
+            <TabsContent value="editor">
               <FormField
                 control={form.control}
                 name="content"
@@ -209,45 +185,40 @@ export function PostEditor({ post }: PostEditorProps) {
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="space-y-4">
-              <FormLabel>标签</FormLabel>
-              <TagSelect
-                selectedTags={selectedTags}
-                onTagsChange={setSelectedTags}
-              />
-            </div>
-          </TabsContent>
-          <TabsContent value="preview">
-            <Preview content={content} type={editorType} />
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+            <TabsContent value="preview">
+              <Preview content={content} />
+            </TabsContent>
+          </Tabs>
+        </div>
 
-        <div className="flex justify-end space-x-4">
+        <div className="space-y-2">
+          <FormLabel>标签</FormLabel>
+          <TagSelect
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+          />
+        </div>
+
+        <div className="flex items-center space-x-4">
           <Button
             type="button"
-            variant="outline"
-            onClick={() => router.back()}
+            onClick={() => {
+              form.handleSubmit((data) => onSubmit(data, "DRAFT"))();
+            }}
             disabled={isSubmitting}
           >
-            取消
+            保存草稿
           </Button>
-          {(!post || post.status === "DRAFT") && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={form.handleSubmit((data) => onSubmit(data, "DRAFT"))}
-              disabled={isSubmitting}
-            >
-              保存草稿
-            </Button>
-          )}
           <Button
             type="button"
-            onClick={form.handleSubmit((data) => onSubmit(data, "PUBLISHED"))}
+            variant="default"
+            onClick={() => {
+              form.handleSubmit((data) => onSubmit(data, "PUBLISHED"))();
+            }}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "发布中..." : (post?.status === "PUBLISHED" ? "更新文章" : "发布文章")}
+            发布
           </Button>
         </div>
       </form>

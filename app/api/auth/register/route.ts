@@ -1,73 +1,79 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { ROLES } from "@/lib/constants/permissions";
+import { logger } from "@/lib/utils/logger";
+import { mailer } from "@/lib/utils/mailer";
+import { nanoid } from 'nanoid';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name } = await request.json();
 
-    // 验证邮箱是否已存在
+    // 验证必填字段
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "邮箱和密码不能为空" },
+        { status: 400 }
+      );
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "邮箱格式不正确" },
+        { status: 400 }
+      );
+    }
+
+    // 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: "邮箱已被注册" }, { status: 400 });
+      return NextResponse.json(
+        { error: "邮箱已被注册" },
+        { status: 400 }
+      );
     }
 
     // 创建用户
     const hashedPassword = await hash(password, 12);
-
-    // 获取默认用户角色
-    const userRole = await prisma.role.findUnique({
-      where: { name: ROLES.USER },
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || email.split("@")[0],
+        emailVerified: false,
+      },
     });
 
-    if (!userRole) {
-      return NextResponse.json(
-        { error: "系统错误：未找到默认角色" },
-        { status: 500 }
-      );
+    // 创建验证令牌
+    const token = nanoid();
+    const verifyToken = await prisma.verifyToken.create({
+      data: {
+        token,
+        userId: user.id,
+        type: 'EMAIL_VERIFICATION',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
+      },
+    });
+
+    // 发送验证邮件
+    try {
+      await mailer.sendVerificationEmail(email, token);
+      logger.info("验证邮件发送成功", { userId: user.id, email });
+    } catch (error) {
+      logger.error("验证邮件发送失败", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: user.id,
+        email,
+      });
     }
 
-    // 使用事务确保用户和角色关联的原子性
-    const user = await prisma.$transaction(async (tx) => {
-      // 创建用户
-      const newUser = await tx.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-          // 设置初始信任等级和评论统计
-          trustLevel: "new",
-          commentCount: 0,
-          approvedCount: 0,
-        },
-      });
-
-      // 关联用户角色
-      await tx.userRole.create({
-        data: {
-          userId: newUser.id,
-          roleId: userRole.id,
-        },
-      });
-
-      // 创建默认收藏夹
-      await tx.favoriteFolder.create({
-        data: {
-          name: "默认收藏夹",
-          description: "系统自动创建的默认收藏夹",
-          isDefault: true,
-          userId: newUser.id,
-        },
-      });
-
-      return newUser;
-    });
-
     return NextResponse.json({
+      message: "注册成功，请查收验证邮件",
       user: {
         id: user.id,
         email: user.email,
@@ -75,9 +81,12 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Error in register:", error);
+    logger.error("注册失败", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
     return NextResponse.json(
-      { error: "注册失败，请稍后重试" },
+      { error: error instanceof Error ? error.message : "注册失败" },
       { status: 500 }
     );
   }

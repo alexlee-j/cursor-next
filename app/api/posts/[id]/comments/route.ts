@@ -9,18 +9,21 @@ import {
 // 获取评论列表
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
+    const { id: postId } = await Promise.resolve(context.params);
+
     const comments = await prisma.comment.findMany({
       where: {
-        postId: params.id,
+        postId,
         status: "APPROVED",
         parentId: null, // 只获取顶层评论
       },
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             email: true,
           },
@@ -32,12 +35,14 @@ export async function GET(
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               },
             },
             replyTo: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               },
@@ -63,7 +68,7 @@ export async function GET(
 // 发表评论
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await checkAuth();
@@ -72,7 +77,37 @@ export async function POST(
     }
 
     const { content, parentId, replyToId } = await request.json();
-    const postId = params.id;
+    const { id: postId } = await Promise.resolve(context.params);
+
+    // 验证文章是否存在
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { id: true, status: true }
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "文章不存在" }, { status: 404 });
+    }
+
+    if (post.status !== "PUBLISHED") {
+      return NextResponse.json({ error: "不能评论未发布的文章" }, { status: 403 });
+    }
+
+    // 如果是回复，验证父评论是否存在且已通过审核
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { id: true, status: true }
+      });
+
+      if (!parentComment) {
+        return NextResponse.json({ error: "父评论不存在" }, { status: 404 });
+      }
+
+      if (parentComment.status !== "APPROVED") {
+        return NextResponse.json({ error: "不能回复未审核的评论" }, { status: 403 });
+      }
+    }
 
     // 自动审核
     const autoApproved = await shouldAutoApprove(content, user.id);
@@ -92,14 +127,33 @@ export async function POST(
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             email: true,
           },
         },
-        replyTo: {
+        replyTo: parentId ? {
           select: {
+            id: true,
             name: true,
             email: true,
+          },
+        } : undefined,
+        replies: {
+          where: {
+            status: "APPROVED",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
           },
         },
       },

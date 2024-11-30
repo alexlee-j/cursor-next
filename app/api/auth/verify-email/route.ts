@@ -1,58 +1,56 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/utils/logger";
 
-export async function POST(req: Request) {
+export async function GET(request: Request) {
   try {
-    const { userId, code } = await req.json();
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("id");
 
-    // 查找验证码记录
-    const verificationRecord = await prisma.verificationCode.findUnique({
-      where: {
-        userId: userId,
-      },
-      include: {
-        user: true,
-      },
+    if (!userId) {
+      return NextResponse.json(
+        { error: "用户ID不能为空" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
     });
 
-    if (!verificationRecord) {
-      return NextResponse.json({ error: "验证码不存在" }, { status: 400 });
+    if (!user) {
+      return NextResponse.json(
+        { error: "用户不存在" },
+        { status: 404 }
+      );
     }
 
-    // 检查验证码是否过期
-    if (verificationRecord.expiresAt < new Date()) {
-      return NextResponse.json({ error: "验证码已过期" }, { status: 400 });
-    }
-
-    // 验证码是否匹配
-    if (verificationRecord.code !== code) {
-      return NextResponse.json({ error: "验证码不正确" }, { status: 400 });
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { message: "邮箱已经验证过了" },
+        { status: 200 }
+      );
     }
 
     // 更新用户验证状态
     await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        emailVerified: true,
-      },
+      where: { id: userId },
+      data: { emailVerified: true },
     });
 
-    // 删除验证码记录
-    await prisma.verificationCode.delete({
-      where: {
-        id: verificationRecord.id,
-      },
-    });
+    logger.info("邮箱验证成功", { userId, email: user.email });
 
-    return NextResponse.json({
-      message: "邮箱验证成功",
-    });
+    // 重定向到登录页面
+    return NextResponse.redirect(
+      `${process.env.NEXT_PUBLIC_APP_URL}/login?verified=true`
+    );
   } catch (error) {
-    console.error("验证失败:", error);
+    logger.error("邮箱验证失败", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
     return NextResponse.json(
-      { error: "验证失败，请稍后重试" },
+      { error: "邮箱验证失败" },
       { status: 500 }
     );
   }

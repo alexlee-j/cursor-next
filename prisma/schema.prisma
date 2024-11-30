@@ -9,18 +9,20 @@ datasource db {
 
 // 用户表
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String?
-  isActive      Boolean   @default(true)
-  emailVerified Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  commentCount  Int       @default(0)
-  approvedCount Int       @default(0)
-  lastCommentAt DateTime?
-  trustLevel    String    @default("new")
+  id             String    @id @default(cuid())
+  email          String    @unique
+  password       String
+  name           String?
+  emailVerified  Boolean   @default(false)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  commentCount   Int       @default(0)
+  approvedCount  Int       @default(0)
+  lastCommentAt  DateTime?
+  trustLevel     String    @default("new")
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret String?  // 用于存储 2FA 密钥
 
   // 关联
   verifyToken   VerifyToken?
@@ -30,15 +32,15 @@ model User {
   posts         Post[]
   comments      Comment[]
   likes         Like[]
-  favorites    Favorite[]
+  favorites     Favorite[]
   favoriteFolders FavoriteFolder[]
   followers     Follow[] @relation("Followers")
   following     Follow[] @relation("Following")
   repliedTo     Comment[] @relation("CommentReplyTo")
   receivedReplies Comment[] @relation("CommentRepliedBy")
-
-  // 添加 pageViews 关系字段
   pageViews     PageView[]
+  twoFactorCodes TwoFactorCode[]
+  loginHistory  LoginHistory[]
 
   @@map("users")
 }
@@ -47,6 +49,7 @@ model User {
 model VerifyToken {
   id        String   @id @default(cuid())
   token     String   @unique
+  type      String   // 验证类型，如：EMAIL_VERIFICATION
   expiresAt DateTime
   createdAt DateTime @default(now())
   userId    String   @unique
@@ -302,4 +305,43 @@ model PageView {
 
   @@index([viewedAt])
   @@index([path])
+}
+
+// 新增模型
+model TwoFactorCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  ip        String
+  userAgent String
+  location  Json?    // 存储地理位置信息
+  success   Boolean
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ip])
+}
+
+// 登录尝试记录表
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  email     String
+  success   Boolean
+  createdAt DateTime @default(now())
+  location  Json?    // 存储地理位置信息
+
+  @@map("login_attempts")
 }

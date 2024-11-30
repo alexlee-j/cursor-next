@@ -16,30 +16,52 @@ interface DashboardData {
   }[];
 }
 
-async function getDashboardData(): Promise<DashboardData> {
+async function getDashboardData(userId: string): Promise<DashboardData> {
   try {
+    // 1. 获取用户的文章和评论统计
     const [publishedPosts, draftPosts, totalComments] = await Promise.all([
       prisma.post.count({
-        where: { status: "PUBLISHED" },
+        where: { 
+          status: "PUBLISHED",
+          authorId: userId
+        },
       }),
       prisma.post.count({
-        where: { status: "DRAFT" },
+        where: { 
+          status: "DRAFT",
+          authorId: userId
+        },
       }),
-      prisma.comment.count(),
+      prisma.comment.count({
+        where: {
+          post: {
+            authorId: userId
+          }
+        }
+      }),
     ]);
 
-    // 获取7天前的日期
+    // 2. 获取7天前的日期
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    // 使用 Prisma 获取访问统计数据
+    // 3. 获取用户文章的访问统计
+    const userPosts = await prisma.post.findMany({
+      where: { authorId: userId },
+      select: { id: true }
+    });
+    
+    const postPaths = userPosts.map(post => `/posts/${post.id}`);
+
+    // 4. 获取每日访问统计
     const analytics = await prisma.pageView.groupBy({
       by: ["viewedAt"],
       where: {
+        path: { in: postPaths },
         viewedAt: {
           gte: sevenDaysAgo,
-        },
+        }
       },
       _count: {
         id: true,
@@ -49,10 +71,14 @@ async function getDashboardData(): Promise<DashboardData> {
       },
     });
 
-    // 获取总访问量
-    const totalViews = await prisma.pageView.count();
+    // 5. 获取总访问量
+    const totalViews = await prisma.pageView.count({
+      where: {
+        path: { in: postPaths }
+      }
+    });
 
-    // 处理最近7天的访问数据
+    // 6. 处理最近7天的访问数据
     const dates = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - i);
@@ -60,7 +86,7 @@ async function getDashboardData(): Promise<DashboardData> {
       return date;
     }).reverse();
 
-    // 创建日期到访问量的映射
+    // 7. 创建日期到访问量的映射
     const viewsMap = new Map(
       analytics.map((item) => [
         item.viewedAt.toISOString().split("T")[0],
@@ -73,13 +99,11 @@ async function getDashboardData(): Promise<DashboardData> {
       views: viewsMap.get(date.toISOString().split("T")[0]) || 0,
     }));
 
-    console.log("analytics data:", analytics);
-
     return {
       totalPosts: publishedPosts,
       draftPosts,
       totalComments,
-      totalViews: totalViews,
+      totalViews,
       recentViews,
     };
   } catch (error) {
@@ -105,7 +129,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const data = await getDashboardData();
+  const data = await getDashboardData(user.id);
 
   return (
     <DashboardShell>

@@ -10,15 +10,14 @@ interface ViewCount {
 export async function POST(req: NextRequest) {
   try {
     const { path } = await req.json();
-    const user = await checkAuth();
 
     const forwardedFor = req.headers.get("x-forwarded-for");
     const ip = forwardedFor ? forwardedFor.split(",")[0] : null;
     const userAgent = req.headers.get("user-agent");
 
     await prisma.$executeRaw`
-      INSERT INTO "PageView" (id, path, "viewedAt", ip, "userAgent", "userId")
-      VALUES (gen_random_uuid(), ${path}, NOW(), ${ip}, ${userAgent}, ${user?.id})
+      INSERT INTO "PageView" (id, path, "viewedAt", ip, "userAgent")
+      VALUES (gen_random_uuid(), ${path}, NOW(), ${ip}, ${userAgent})
     `;
 
     return NextResponse.json({ success: true });
@@ -33,11 +32,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await checkAuth();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const days = parseInt(searchParams.get("days") || "7", 10);
 

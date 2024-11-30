@@ -16,7 +16,8 @@ export default function VerifyEmailPage() {
   useEffect(() => {
     async function verify() {
       if (!token) {
-        router.push("/login");
+        setStatus("error");
+        setError("验证令牌不能为空");
         return;
       }
 
@@ -53,6 +54,12 @@ export default function VerifyEmailPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold">验证失败</h1>
           <p className="mt-2 text-muted-foreground">{error}</p>
+          <button
+            onClick={() => router.push("/login")}
+            className="mt-4 rounded-md bg-primary px-4 py-2 text-white hover:bg-primary/90"
+          >
+            返回登录
+          </button>
         </div>
       </div>
     );
