@@ -79,7 +79,7 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6" data-testid="post-list">
       {loading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -87,7 +87,7 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
       ) : (
         <div className="space-y-3 md:space-y-4">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} data-testid="post-item" />
           ))}
         </div>
       )}

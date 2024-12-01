@@ -475,7 +475,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
                     />
                   )}
                 </div>
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div>发布于：{formatDate(postData.createdAt)}</div>
                   {postData.updatedAt > postData.createdAt && (
                     <div>更新于：{formatDate(postData.updatedAt)}</div>

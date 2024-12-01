@@ -138,7 +138,14 @@ export function Comments({
   return (
     <div className="space-y-6">
       {isLoggedIn ? (
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="space-y-4"
+          data-testid="comment-form"
+        >
           <Textarea
             placeholder="写下你的评论..."
             value={content}
@@ -154,7 +161,7 @@ export function Comments({
               )}
             </Button>
           </div>
-        </div>
+        </form>
       ) : (
         <div className="flex flex-col items-center justify-center space-y-4 p-6 bg-muted/50 rounded-lg">
           <p className="text-muted-foreground">登录后参与评论讨论</p>
@@ -164,7 +171,7 @@ export function Comments({
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="comment-list">
         {comments.map((comment) => (
           <Comment
             key={comment.id}

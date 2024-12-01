@@ -55,9 +55,14 @@ export function LikeButton({
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={toggleLike}
       disabled={isLoading}
+      aria-pressed={liked}
+      data-testid="like-button"
+      data-count={likesCount}
       className={`inline-flex items-center space-x-1 px-2 py-1 text-sm rounded-md transition-colors ${
         liked ? "text-red-500" : "text-muted-foreground hover:text-red-500/80"
       }`}
@@ -70,6 +75,6 @@ export function LikeButton({
         />
       )}
       <span>{likesCount}</span>
-    </button>
+    </Button>
   );
 }

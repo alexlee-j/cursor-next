@@ -116,7 +116,11 @@ export function PostEditor({ post }: PostEditorProps) {
 
   return (
     <Form {...form}>
-      <form className="space-y-8">
+      <form
+        className="space-y-8"
+        onSubmit={form.handleSubmit(onSubmit)}
+        data-testid="post-editor-form"
+      >
         <FormField
           control={form.control}
           name="title"
