@@ -37,7 +37,9 @@ export async function DELETE(
       return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    if (post.authorId !== user.id) {
+    // 检查用户是否为管理员或文章作者
+    const isAdmin = user.roles?.includes("admin");
+    if (!isAdmin && post.authorId !== user.id) {
       return NextResponse.json({ error: "无权删除此文章" }, { status: 403 });
     }
 
@@ -62,12 +64,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const user = await checkAuth();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const user = await checkAuth();
+    if (!user) {
+      return NextResponse.json({ error: "未授权" }, { status: 401 });
+    }
+
     const body = await req.json();
 
     // 使用 schema 验证输入数据
@@ -81,35 +83,32 @@ export async function PATCH(
 
     const { title, content, excerpt, type, status, tags } = result.data;
 
-    // 检查文章是否存在且属于当前用户
+    // 检查文章是否存在
     const existingPost = await prisma.post.findUnique({
       where: { id: params.id },
     });
 
     if (!existingPost) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    if (existingPost.authorId !== user.id) {
+    // 检查用户是否为管理员或文章作者
+    const isAdmin = user.roles?.includes("admin");
+    if (!isAdmin && existingPost.authorId !== user.id) {
       return NextResponse.json(
-        { error: "You don't have permission to update this post" },
+        { error: "无权更新此文章" },
         { status: 403 }
       );
     }
 
     // 首先删除现有的标签关联
     await prisma.postTag.deleteMany({
-      where: {
-        postId: params.id,
-      },
+      where: { postId: params.id },
     });
 
-    // 更新文章和创建新的标签关联
+    // 更新文章和标签
     const post = await prisma.post.update({
-      where: {
-        id: params.id,
-        authorId: user.id,
-      },
+      where: { id: params.id },
       data: {
         title,
         content,
@@ -118,12 +117,8 @@ export async function PATCH(
         status,
         postTags: {
           create: tags?.map((tag) => ({
-            tag: {
-              connect: {
-                id: tag.id,
-              },
-            },
-          })),
+            tagId: tag.id,
+          })) || [],
         },
       },
       include: {
@@ -135,11 +130,15 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(post);
+    return NextResponse.json({
+      ...post,
+      tags: post.postTags.map((pt) => pt.tag),
+      postTags: undefined,
+    });
   } catch (error) {
     console.error("更新文章失败:", error);
     return NextResponse.json(
-      { error: "Failed to update post" },
+      { error: "更新文章失败，请稍后重试" },
       { status: 500 }
     );
   }

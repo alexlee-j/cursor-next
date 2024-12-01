@@ -15,14 +15,18 @@ export default async function PostsPage() {
       redirect("/login");
     }
 
+    // 在"我的文章"页面，所有用户（包括管理员）只能看到自己的文章
+    const where = { authorId: user.id };
+
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
-        where: { authorId: user.id },
+        where,
         take: POSTS_PER_PAGE,
         orderBy: { updatedAt: "desc" },
         include: {
           author: {
             select: {
+              id: true,
               name: true,
               email: true,
             },
@@ -41,9 +45,7 @@ export default async function PostsPage() {
           },
         },
       }),
-      prisma.post.count({
-        where: { authorId: user.id },
-      }),
+      prisma.post.count({ where }),
     ]);
 
     const formattedPosts = posts.map((post) => ({
@@ -52,9 +54,13 @@ export default async function PostsPage() {
       content: post.content,
       excerpt: post.excerpt,
       status: post.status,
+      authorId: post.authorId,
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
-      author: post.author,
+      author: {
+        id: user.id,
+        ...post.author
+      },
       tags: post.postTags.map((pt) => pt.tag),
       commentsCount: post._count.comments,
       likesCount: post._count.likes,

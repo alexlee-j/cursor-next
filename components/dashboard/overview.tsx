@@ -19,7 +19,7 @@ interface OverviewProps {
 export function Overview({ data }: OverviewProps) {
   return (
     <>
-      <Card>
+      <Card className="col-span-1">
         <CardHeader>
           <CardTitle>已发布文章</CardTitle>
         </CardHeader>
@@ -27,7 +27,7 @@ export function Overview({ data }: OverviewProps) {
           <div className="text-2xl font-bold">{data.totalPosts}</div>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="col-span-1">
         <CardHeader>
           <CardTitle>草稿箱</CardTitle>
         </CardHeader>
@@ -35,7 +35,7 @@ export function Overview({ data }: OverviewProps) {
           <div className="text-2xl font-bold">{data.draftPosts}</div>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="col-span-1">
         <CardHeader>
           <CardTitle>评论数</CardTitle>
         </CardHeader>
@@ -43,7 +43,7 @@ export function Overview({ data }: OverviewProps) {
           <div className="text-2xl font-bold">{data.totalComments}</div>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="col-span-1">
         <CardHeader>
           <CardTitle>总浏览量</CardTitle>
         </CardHeader>
@@ -52,7 +52,7 @@ export function Overview({ data }: OverviewProps) {
         </CardContent>
       </Card>
       {data.recentViews.length > 0 && (
-        <Card className="col-span-4">
+        <Card className="col-span-full">
           <CardHeader>
             <CardTitle>访问趋势</CardTitle>
           </CardHeader>

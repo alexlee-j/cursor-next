@@ -79,15 +79,23 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "10", 10);
     const userId = searchParams.get("userId");
+    const pageParam = searchParams.get("page");
+    
+    // 参数验证和默认值处理
+    const page = Math.max(1, Number.isInteger(Number(pageParam)) ? Number(pageParam) : 1);
+    const limit = 10;
     const skip = (page - 1) * limit;
 
+    // 构建查询条件
     const where = userId ? { authorId: userId } : {};
 
-    const [posts, total] = await Promise.all([
-      prisma.post.findMany({
+    // 分开执行查询以便于错误处理
+    let posts;
+    let total;
+
+    try {
+      posts = await prisma.post.findMany({
         where,
         skip,
         take: limit,
@@ -105,17 +113,45 @@ export async function GET(req: NextRequest) {
               tag: true,
             },
           },
+          _count: {
+            select: {
+              comments: true,
+              likes: true,
+              favorites: true,
+            },
+          },
         },
-      }),
-      prisma.post.count({ where }),
-    ]);
+      });
+
+      total = await prisma.post.count({ where });
+    } catch (dbError) {
+      console.error("Database query error:", dbError);
+      return NextResponse.json(
+        { error: "数据库查询失败" },
+        { status: 500 }
+      );
+    }
+
+    if (!posts) {
+      return NextResponse.json(
+        { error: "未找到文章" },
+        { status: 404 }
+      );
+    }
 
     const formattedPosts = posts.map((post) => ({
-      ...post,
-      tags: post.postTags.map((pt) => pt.tag),
-      postTags: undefined,
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+      status: post.status,
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
+      author: post.author,
+      tags: post.postTags.map((pt) => pt.tag),
+      commentsCount: post._count?.comments || 0,
+      likesCount: post._count?.likes || 0,
+      favoritesCount: post._count?.favorites || 0,
     }));
 
     return NextResponse.json({

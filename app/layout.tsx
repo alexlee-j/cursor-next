@@ -32,7 +32,10 @@ export default function RootLayout({
           forcedTheme={undefined}
           themes={["light", "dark", "system"]}
         >
-          <div className="min-h-screen bg-background font-sans antialiased">
+          <div 
+            className="relative min-h-screen bg-background font-sans antialiased"
+            id="root-content"
+          >
             {children}
           </div>
           <Toaster />

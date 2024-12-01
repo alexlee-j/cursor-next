@@ -37,8 +37,21 @@ export function FavoriteDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newFolder, setNewFolder] = useState({ name: "", description: "" });
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const { setIsFavorited, setFavoritesCount, isFavorited: globalIsFavorited, favoritesCount } = usePostActions();
+
+  const filteredFolders = folders.filter(folder => 
+    folder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (folder.description && folder.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // 对收藏夹进行排序：默认收藏夹置顶，其他按名称排序
+  const sortedFolders = [...filteredFolders].sort((a, b) => {
+    if (a.isDefault && !b.isDefault) return -1;
+    if (!a.isDefault && b.isDefault) return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   const toggleFavorite = async (folderId: string) => {
     try {
@@ -156,8 +169,10 @@ export function FavoriteDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <button
-          className={`inline-flex items-center space-x-1 px-2 py-1 text-sm hover:bg-accent hover:text-accent-foreground rounded-md transition-colors ${
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`inline-flex items-center space-x-1 px-2 py-1 text-sm rounded-md transition-colors ${
             globalIsFavorited
               ? "text-yellow-500"
               : "text-muted-foreground hover:text-yellow-500/80"
@@ -171,10 +186,10 @@ export function FavoriteDialog({
             }`}
           />
           <span>{favoritesCount}</span>
-        </button>
+        </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>添加到收藏夹</DialogTitle>
           <DialogDescription>
@@ -182,103 +197,139 @@ export function FavoriteDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {showCreateForm ? (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">收藏夹名称</Label>
-              <Input
-                id="name"
-                value={newFolder.name}
-                onChange={(e) =>
-                  setNewFolder((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="输入收藏夹名称"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">描述</Label>
-              <Textarea
-                id="description"
-                value={newFolder.description}
-                onChange={(e) =>
-                  setNewFolder((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="输入收藏夹描述（可选）"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateForm(false)}
-                disabled={isLoading}
-              >
-                取消
-              </Button>
-              <Button
-                onClick={createFolder}
-                disabled={!newFolder.name || isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "创建"
-                )}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowCreateForm(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              创建新收藏夹
-            </Button>
-
+        <div className="mt-4 space-y-4">
+          {showCreateForm ? (
             <div className="space-y-4">
-              {folders.map((folder) => (
-                <div
-                  key={folder.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+              <div className="space-y-2">
+                <Label htmlFor="name">收藏夹名称</Label>
+                <Input
+                  id="name"
+                  value={newFolder.name}
+                  onChange={(e) =>
+                    setNewFolder((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="输入收藏夹名称"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">描述</Label>
+                <Textarea
+                  id="description"
+                  value={newFolder.description}
+                  onChange={(e) =>
+                    setNewFolder((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="输入收藏夹描述（可选）"
+                  className="resize-none"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end space-x-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setNewFolder({ name: "", description: "" });
+                  }}
+                  disabled={isLoading}
                 >
-                  <div>
-                    <h3 className="font-medium">
-                      {folder.name}
-                      {folder.isDefault && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          默认收藏夹
-                        </span>
-                      )}
-                    </h3>
-                    {folder.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {folder.description}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant={folder.isFavorited ? "default" : "outline"}
-                    disabled={isLoading}
-                    onClick={() => toggleFavorite(folder.id)}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : folder.isFavorited ? (
-                      "已收藏"
-                    ) : (
-                      "收藏"
-                    )}
-                  </Button>
-                </div>
-              ))}
+                  取消
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={createFolder}
+                  disabled={!newFolder.name || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  创建收藏夹
+                </Button>
+              </div>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              <div className="flex items-center space-x-2">
+                <Input
+                  placeholder="搜索收藏夹..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              <div 
+                className="grid gap-2 overflow-y-auto pr-2" 
+                style={{ 
+                  maxHeight: 'min(60vh, 400px)',
+                  scrollbarGutter: 'stable',
+                }}
+              >
+                {sortedFolders.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchQuery ? "没有找到匹配的收藏夹" : "暂无收藏夹"}
+                  </div>
+                ) : (
+                  sortedFolders.map((folder) => (
+                    <div
+                      key={folder.id}
+                      className="flex items-center space-x-2 p-2 hover:bg-accent rounded-lg transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium truncate">{folder.name}</h3>
+                          {folder.isDefault && (
+                            <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20 whitespace-nowrap">
+                              默认
+                            </span>
+                          )}
+                        </div>
+                        {folder.description && (
+                          <p className="text-sm text-muted-foreground truncate">
+                            {folder.description}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        variant={folder.isFavorited ? "default" : "outline"}
+                        size="sm"
+                        disabled={isLoading}
+                        onClick={() => toggleFavorite(folder.id)}
+                        className="shrink-0"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : folder.isFavorited ? (
+                          "已收藏"
+                        ) : (
+                          "收藏"
+                        )}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {!searchQuery && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowCreateForm(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  创建新收藏夹
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

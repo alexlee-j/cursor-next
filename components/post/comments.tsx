@@ -37,6 +37,7 @@ interface CommentType {
   replies: ReplyType[];
   parentId?: string;
   depth?: number;
+  status: string;
 }
 
 interface CommentsProps {
@@ -79,9 +80,14 @@ export function Comments({
       }
 
       const newComment = await response.json();
+      
 
-      if (!newComment.needsReview) {
-        setComments((prev) => [newComment, ...prev]);
+      // 只有评论状态为 APPROVED 时才添加到列表中
+      if (newComment.status === "APPROVED") {
+        setComments((prev) => [{
+          ...newComment,
+          replies: [], // 新评论没有回复
+        }, ...prev]);
         toast({
           title: "评论成功",
         });
@@ -107,36 +113,67 @@ export function Comments({
     commentId: string,
     replyToId: string
   ) => {
-    const response = await fetch(`/api/posts/${postId}/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content,
-        parentId: commentId,
-        replyToId,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content,
+          parentId: commentId,
+          replyToId,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error("回复失败");
-    }
+      if (!response.ok) {
+        throw new Error("回复失败");
+      }
 
-    const newReply = await response.json();
-    if (!newReply.needsReview) {
-      setComments((prev) =>
-        prev.map((comment) =>
-          comment.id === commentId
-            ? { ...comment, replies: [...comment.replies, newReply] }
-            : comment
-        )
-      );
+      const newReply = await response.json();
+      
+      // 只有回复状态为 APPROVED 时才添加到列表中
+      if (newReply.status === "APPROVED") {
+        setComments((prev) =>
+          prev.map((comment) => {
+            if (comment.id === commentId) {
+              // 找到要回复的评论
+              const replyToUser = comment.replies.find(r => r.user.id === replyToId)?.user || comment.user;
+              return {
+                ...comment,
+                replies: [...comment.replies, {
+                  ...newReply,
+                  replyTo: {
+                    id: replyToId,
+                    name: replyToUser.name,
+                    email: replyToUser.email,
+                  },
+                }],
+              };
+            }
+            return comment;
+          })
+        );
+        toast({
+          title: "回复成功",
+        });
+      } else {
+        toast({
+          title: "回复成功",
+          description: "回复正在审核中，通过后将自动显示",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "回复失败",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="pb-[72px] lg:pb-0 space-y-6">
       {isLoggedIn ? (
         <form
           onSubmit={(e) => {

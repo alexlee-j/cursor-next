@@ -14,6 +14,7 @@ export async function GET(
   try {
     const { id: postId } = await Promise.resolve(context.params);
 
+    // 只获取顶层已审核的评论
     const comments = await prisma.comment.findMany({
       where: {
         postId,
@@ -28,6 +29,7 @@ export async function GET(
             email: true,
           },
         },
+        // 获取已审核的回复
         replies: {
           where: {
             status: "APPROVED",
@@ -139,25 +141,18 @@ export async function POST(
             email: true,
           },
         } : undefined,
-        replies: {
-          where: {
-            status: "APPROVED",
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "asc",
-          },
-        },
       },
     });
+
+    console.log('Created comment:', JSON.stringify({
+      id: comment.id,
+      content: comment.content,
+      status: comment.status,
+      parentId: comment.parentId,
+      replyToId: comment.replyToId,
+      user: comment.user,
+      replyTo: comment.replyTo,
+    }, null, 2));
 
     // 更新用户评论统计
     await prisma.user.update({
@@ -172,10 +167,15 @@ export async function POST(
     // 更新用户信任等级
     await updateUserTrustLevel(user.id);
 
-    return NextResponse.json({
+    const response = {
       ...comment,
-      needsReview: !autoApproved,
-    });
+      needsReview: status === "PENDING",
+      status,
+    };
+
+    console.log('API Response:', JSON.stringify(response, null, 2));
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error creating comment:", error);
     return NextResponse.json(

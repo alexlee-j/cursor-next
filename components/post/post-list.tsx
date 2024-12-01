@@ -38,10 +38,15 @@ export function PostList({ initialPosts, currentPage: initialPage, totalPages: i
   const fetchPosts = useCallback(async (page: number) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/posts?page=${page}&userId=${userId}`);
+      // 确保 page 是有效的数字
+      const validPage = Number.isNaN(page) ? 1 : Math.max(1, page);
+      const response = await fetch(`/api/posts?page=${validPage}&userId=${userId}`);
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || '获取文章列表失败');
+      }
       setPosts(data.posts);
-      setCurrentPage(data.currentPage);
+      setCurrentPage(data.page);
       setTotalPages(data.totalPages);
     } catch (error) {
       console.error("Failed to fetch posts:", error);

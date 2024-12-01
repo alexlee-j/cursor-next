@@ -40,6 +40,7 @@ type PostWithRelations = Post & {
         isAuthor?: boolean;
       };
       replyTo: {
+        id: string;
         name: string | null;
         email: string;
       };
@@ -103,7 +104,10 @@ async function getPost(
         },
         comments: {
           where: {
-            AND: [{ status: "APPROVED" }, { parentId: null }],
+            AND: [
+              { status: "APPROVED" },
+              { parentId: null }, // 只获取顶层评论
+            ],
           },
           orderBy: {
             createdAt: "desc",
@@ -118,7 +122,10 @@ async function getPost(
             },
             replies: {
               where: {
-                status: "APPROVED",
+                AND: [
+                  { status: "APPROVED" },
+                  { parentId: { not: null } }, // 确保是二级评论
+                ],
               },
               include: {
                 user: {
@@ -130,6 +137,7 @@ async function getPost(
                 },
                 replyTo: {
                   select: {
+                    id: true,
                     name: true,
                     email: true,
                   },
@@ -245,22 +253,26 @@ async function getPost(
 
       isFollowing = !!followStatus;
     }
-
+    
     // 处理评论数据，添加作者标识
-    const commentsWithAuthorFlag = post.comments.map((comment) => ({
-      ...comment,
-      user: {
-        ...comment.user,
-        isAuthor: comment.user.id === post.authorId,
-      },
-      replies: comment.replies.map((reply) => ({
-        ...reply,
+    const commentsWithAuthorFlag = post.comments.map((comment) => {
+      const processedComment = {
+        ...comment,
         user: {
-          ...reply.user,
-          isAuthor: reply.user.id === post.authorId,
+          ...comment.user,
+          isAuthor: comment.user.id === post.authorId,
         },
-      })),
-    }));
+        replies: comment.replies.map((reply) => ({
+          ...reply,
+          user: {
+            ...reply.user,
+            isAuthor: reply.user.id === post.authorId,
+          },
+        })),
+      };
+
+      return processedComment;
+    });
 
     return {
       post: {
@@ -297,204 +309,89 @@ export default async function PostPage({ params }: { params: { id: string } }) {
       redirect("/");
     }
 
-    // 2. 获取文章信息（不依赖用户登录状态）
-    const postData = await prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        comments: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            replies: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                  },
-                },
-                replyTo: {
-                  select: {
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            favorites: true,
-          },
-        },
-      },
-    });
+    // 2. 获取用户信息（可能为 null）
+    const user = await checkAuth();
 
-    if (!postData) {
+    // 3. 使用 getPost 函数获取文章数据
+    const { post, liked, favoriteFolders, isFollowing, followersCount } = await getPost(id, user?.id);
+
+    if (!post) {
       redirect("/");
     }
 
-    // 3. 检查文章状态
-    const isDraft = postData.status !== "PUBLISHED";
-
-    // 4. 获取用户信息（可能为 null）
-    const user = await checkAuth();
-
-    // 5. 检查访问权限
-    const isAuthor = user?.id === postData.authorId;
+    // 4. 检查文章状态和访问权限
+    const isDraft = post.status !== "PUBLISHED";
+    const isAuthor = user?.id === post.authorId;
     if (isDraft && !isAuthor) {
       redirect("/");
     }
 
-    // 6. 获取用户相关的交互状态
-    let liked = false;
-    let favoriteFolders: any[] = [];
-    let isFollowing = false;
-
-    // 获取关注者数量（不依赖用户登录状态）
-    const followersCount = await prisma.follow.count({
-      where: { followingId: postData.authorId },
-    });
-
-    if (user) {
-      // 只在用户登录时获取这些信息
-      const [likeData, folderData, followData] = await Promise.all([
-        prisma.like.findFirst({
-          where: {
-            postId: id,
-            userId: user.id,
-          },
-        }),
-        prisma.favoriteFolder.findMany({
-          where: {
-            userId: user.id,
-          },
-          include: {
-            favorites: {
-              where: {
-                postId: id,
-              },
-            },
-          },
-        }),
-        prisma.follow.findFirst({
-          where: {
-            followerId: user.id,
-            followingId: postData.authorId,
-          },
-        }),
-      ]);
-
-      liked = !!likeData;
-      favoriteFolders = folderData.map(folder => ({
-        ...folder,
-        isFavorited: folder.favorites.length > 0,
-      }));
-      isFollowing = !!followData;
-    }
-
-    // 7. 更新浏览量（不阻塞页面渲染）
-    if (!isDraft) {
-      prisma.post.update({
-        where: { id },
-        data: {
-          viewCount: {
-            increment: 1,
-          },
-        },
-      }).catch(error => {
-        console.error("Failed to update view count:", error);
-      });
-    }
-
-    // 8. 返回页面内容
+    // 5. 渲染页面
     return (
       <PostActionsProvider
         initialLiked={liked}
-        initialLikesCount={postData._count.likes}
+        initialLikesCount={post.likesCount}
         initialIsFavorited={favoriteFolders.some(
           (folder) => folder.isFavorited
         )}
-        initialFavoritesCount={postData._count.favorites}
+        initialFavoritesCount={post.favoritesCount}
       >
         <div className="container relative max-w-3xl py-6 lg:py-12">
-          <div className="hidden lg:flex fixed right-[max(0px,calc(50%-45rem))] top-1/2 -translate-y-1/2 flex-col gap-4 pr-4">
-            <QuickActions
-              postId={postData.id}
-              liked={liked}
-              likesCount={postData._count.likes}
-              favoriteFolders={favoriteFolders}
-              favoritesCount={postData._count.favorites}
-              commentsCount={postData.comments.length}
-            />
-          </div>
-
-          <article>
-            <div className="space-y-4">
+          <article className="prose prose-quoteless prose-neutral dark:prose-invert mx-auto">
+            {/* 文章标题 */}
+            <div className="not-prose mb-8">
               <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-                <h1 className="text-4xl font-bold">{postData.title}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
                 {isDraft && <Badge variant="secondary">草稿</Badge>}
               </div>
-              {postData.excerpt && (
-                <p className="text-lg text-muted-foreground">{postData.excerpt}</p>
+              {post.excerpt && (
+                <p className="text-lg text-muted-foreground mt-2">{post.excerpt}</p>
               )}
-              {postData.postTags?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {postData.postTags.map((tag) => (
+              {post.postTags?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {post.postTags.map((tag) => (
                     <Badge key={tag.tag.id} variant="secondary">
                       {tag.tag.name}
                     </Badge>
                   ))}
                 </div>
               )}
-              <div className="flex flex-col space-y-4">
+              <div className="mt-4 flex flex-col space-y-4">
                 <div className="flex items-center gap-4">
                   <span className="text-muted-foreground">
-                    作者：{postData.author.name || postData.author.email}
+                    作者：{post.author.name || post.author.email}
                   </span>
                   {!isAuthor && (
                     <FollowButton
-                      authorId={postData.authorId}
+                      authorId={post.authorId}
                       initialIsFollowing={isFollowing}
                       initialCount={followersCount}
                     />
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <div>发布于：{formatDate(postData.createdAt)}</div>
-                  {postData.updatedAt > postData.createdAt && (
-                    <div>更新于：{formatDate(postData.updatedAt)}</div>
+                  <time dateTime={post.createdAt.toISOString()}>
+                    发布于：{formatDate(post.createdAt)}
+                  </time>
+                  {post.updatedAt > post.createdAt && (
+                    <time dateTime={post.updatedAt.toISOString()}>
+                      更新于：{formatDate(post.updatedAt)}
+                    </time>
                   )}
                   <div>
-                    浏览：
-                    {isDraft ? postData.viewCount : postData.viewCount + 1}
+                    浏览：{isDraft ? post.viewCount : post.viewCount + 1}
                   </div>
                   {!isDraft && (
                     <div className="flex items-center gap-4">
                       <LikeButton
-                        postId={postData.id}
+                        postId={post.id}
                         initialLiked={liked}
-                        initialCount={postData._count.likes}
+                        initialCount={post.likesCount}
                       />
                       <FavoriteDialog
-                        postId={postData.id}
+                        postId={post.id}
                         initialFolders={favoriteFolders}
-                        initialCount={postData._count.favorites}
+                        initialCount={post.favoritesCount}
                         isFavorited={favoriteFolders.some(
                           (folder) => folder.isFavorited
                         )}
@@ -505,41 +402,57 @@ export default async function PostPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            <div className="prose dark:prose-invert mt-8 max-w-none">
-              <div
-                className={
-                  postData.type === "markdown"
-                    ? "markdown-content"
-                    : "wysiwyg-content"
-                }
-                dangerouslySetInnerHTML={{
-                  __html: postData.content,
-                }}
-              />
-            </div>
+            {/* 文章内容 */}
+            <div
+              className={
+                post.type === "markdown"
+                  ? "markdown-content"
+                  : "wysiwyg-content"
+              }
+              dangerouslySetInnerHTML={{
+                __html: post.content,
+              }}
+            />
 
-            {!isDraft && (
-              <div className="mt-12" id="comments-section">
-                <h2 className="text-2xl font-bold mb-6">评论</h2>
+            {/* 评论区 */}
+            <div id="comments-section" className="not-prose mt-8">
+              {!isDraft && (
                 <Comments
-                  postId={postData.id}
-                  initialComments={postData.comments}
+                  postId={post.id}
+                  initialComments={post.comments}
                   isLoggedIn={!!user}
                 />
-              </div>
-            )}
-
-            {isDraft && !isAuthor && (
-              <div className="mt-12 text-center text-muted-foreground">
-                <p>草稿状态下不支持评论、点赞和收藏功能</p>
-              </div>
-            )}
+              )}
+              {isDraft && !isAuthor && (
+                <div className="mt-12 text-center text-muted-foreground">
+                  <p>草稿状态下不支持评论、点赞和收藏功能</p>
+                </div>
+              )}
+            </div>
           </article>
+
+          {/* 快捷操作栏 */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background shadow-[0_-2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] lg:shadow-none lg:bottom-auto lg:left-auto lg:right-[max(0px,calc(50%-45rem))] lg:top-1/2 lg:-translate-y-1/2 lg:bg-transparent">
+            <QuickActions
+              postId={post.id}
+              liked={liked}
+              likesCount={post.likesCount}
+              favoriteFolders={favoriteFolders}
+              favoritesCount={post.favoritesCount}
+              commentsCount={post.comments.length}
+              className="mx-auto max-w-3xl lg:mx-0"
+              author={post.author}
+              isFollowing={isFollowing}
+              followersCount={followersCount}
+            />
+          </div>
         </div>
       </PostActionsProvider>
     );
   } catch (error) {
     console.error("Error rendering post page:", error);
     redirect("/");
+  } finally {
+    console.log('=== END: PostPage ===');
   }
 }
