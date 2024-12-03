@@ -76,20 +76,20 @@ export function PostList({
             {post.excerpt && (
               <p className="text-muted-foreground mb-4">{post.excerpt}</p>
             )}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col space-y-4">
+              <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
                   <Link key={tag.id} href={`/?tag=${tag.name}`}>
                     <Badge
                       variant="secondary"
-                      className="hover:bg-secondary/80"
+                      className="hover:bg-secondary/80 whitespace-normal break-words"
                     >
                       {tag.name}
                     </Badge>
                   </Link>
                 ))}
               </div>
-              <div className="flex items-center gap-4 text-muted-foreground">
+              <div className="flex items-center gap-4 text-muted-foreground justify-end">
                 <div className="flex items-center gap-1">
                   <MessageSquare className="h-4 w-4" />
                   <span>{post.commentsCount}</span>
