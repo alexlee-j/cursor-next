@@ -6,54 +6,53 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Icons } from "@/components/icons";
-import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserNavProps {
   user: {
     id: string;
     email: string;
     name: string | null;
+    image?: string | null;
   };
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const router = useRouter();
-
   const handleLogout = async () => {
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      if (response.ok) {
-        router.push("/login");
-        router.refresh();
+
+      if (!response.ok) {
+        throw new Error("退出登录失败");
       }
+
+      // 刷新页面以清除客户端状态并重定向到首页
+      window.location.href = "/";
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("退出登录失败", error);
     }
   };
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Icons.user className="h-4 w-4" />
-        </Button>
+      <DropdownMenuTrigger className="cursor-pointer">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={user.image || ''} alt={user.name || user.email} />
+          <AvatarFallback>{(user.name || user.email).charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" forceMount>
-        <div className="flex items-center justify-start gap-2 p-2">
-          <div className="flex flex-col space-y-1 leading-none">
-            {user?.name && <p className="font-medium">{user.name}</p>}
-            {user?.email && (
-              <p className="w-[200px] truncate text-sm text-muted-foreground">
-                {user.email}
-              </p>
-            )}
-          </div>
-        </div>
-        <DropdownMenuItem onClick={handleLogout}>退出登录</DropdownMenuItem>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem 
+          className="text-red-600 focus:text-red-600 cursor-pointer" 
+          onClick={handleLogout}
+        >
+          退出登录
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

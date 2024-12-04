@@ -7,6 +7,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/home/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SiteHeader } from "@/components/layout/site-header";
 
 const POSTS_PER_PAGE = 10;
 
@@ -224,130 +225,132 @@ export default async function HomePage({
     ]);
 
   return (
-    <div className="container py-6">
-      {/* Mobile Tags (Only visible on mobile) */}
-      <div className="md:hidden mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>热门标签</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {popularTags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {popularTags.map((tag) => (
-                  <Link key={tag.id} href={`/?tag=${tag.name}`}>
-                    <Badge variant="secondary" className="hover:bg-secondary/80">
-                      {tag.name}
-                      <span className="ml-1 text-xs">({tag.count})</span>
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <EmptyState type="tags" />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr,300px] gap-6">
-        <div className="space-y-6">
-          <Tabs value={params.orderBy} className="w-full">
-            <div className="flex items-center justify-between">
-              <TabsList>
-                <TabsTrigger value="latest" asChild>
-                  <Link href={`/?orderBy=latest${params.tag ? `&tag=${params.tag}` : ""}`}>
-                    最新发布
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="popular" asChild>
-                  <Link href={`/?orderBy=popular${params.tag ? `&tag=${params.tag}` : ""}`}>
-                    热门文章
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-              {params.tag && (
-                <div className="text-sm text-muted-foreground">
-                  标签：{params.tag}
-                  <Link href="/" className="ml-2 hover:text-primary">
-                    清除
-                  </Link>
-                </div>
-              )}
-            </div>
-            <TabsContent value={params.orderBy} className="mt-6">
-              {posts.length > 0 ? (
-                <PostList
-                  posts={posts}
-                  currentPage={params.page}
-                  totalPages={totalPages}
-                  urlPrefix={`?orderBy=${params.orderBy}`}
-                  tag={params.tag}
-                />
-              ) : (
-                <EmptyState
-                  type="posts"
-                  message={params.tag ? `没有找到标签为"${params.tag}"的文章` : undefined}
-                  showCreateButton={!!user}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Desktop Sidebar (Hidden on mobile) */}
-        <div className="hidden md:block sticky top-6 space-y-6 self-start">
-          <Card>
-            <CardHeader>
-              <CardTitle>热门标签</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {popularTags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {popularTags.map((tag) => (
-                    <Link key={tag.id} href={`/?tag=${tag.name}`}>
-                      <Badge variant="secondary" className="hover:bg-secondary/80">
-                        {tag.name}
-                        <span className="ml-1 text-xs">({tag.count})</span>
-                      </Badge>
+    <>
+      <SiteHeader user={user} />
+      <div className="container pb-6">
+        {/* Tabs Section - Sticky on mobile and desktop */}
+        <div className="sticky top-[3.5rem] z-40 -mx-6 px-6 pt-6 pb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center space-x-4">
+            <Tabs value={params.orderBy} className="w-full">
+              <div className="flex items-center justify-between">
+                <TabsList>
+                  <TabsTrigger value="latest" asChild>
+                    <Link href={`/?orderBy=latest${params.tag ? `&tag=${params.tag}` : ""}`}>
+                      最新发布
                     </Link>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState type="tags" />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>活跃作者</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {popularAuthors.length > 0 ? (
-                <div className="space-y-4">
-                  {popularAuthors.map((author) => (
-                    <div key={author.id} className="flex items-center justify-between">
-                      <Link
-                        href={`/users/${author.id}`}
-                        className="hover:text-primary transition-colors"
-                      >
-                        {author.name || author.email}
+                  </TabsTrigger>
+                  <TabsTrigger value="popular" asChild>
+                    <Link href={`/?orderBy=popular${params.tag ? `&tag=${params.tag}` : ""}`}>
+                      最受欢迎
+                    </Link>
+                  </TabsTrigger>
+                </TabsList>
+                {params.tag && (
+                  <div className="text-sm text-muted-foreground">
+                    标签：{params.tag}
+                    <Link href="/" className="ml-2 hover:text-primary">
+                      清除
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </Tabs>
+          </div>
+          
+          {/* Mobile Tags (Only visible on mobile) */}
+          {/* <div className="hidden mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>热门标签</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {popularTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {popularTags.map((tag) => (
+                      <Link key={tag.id} href={`/?tag=${tag.name}`}>
+                        <Badge variant="secondary" className="hover:bg-secondary/80">
+                          {tag.name}
+                          <span className="ml-1 text-xs">({tag.count})</span>
+                        </Badge>
                       </Link>
-                      <span className="text-sm text-muted-foreground">
-                        {author.postsCount} 篇文章
-                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState type="tags" />
+                )}
+              </CardContent>
+            </Card>
+          </div> */}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,300px] gap-6 mt-6">
+          {/* Posts List */}
+          <div className="space-y-6">
+            <PostList
+              posts={posts}
+              currentPage={params.page}
+              totalPages={totalPages}
+              urlPrefix={`?orderBy=${params.orderBy}`}
+              tag={params.tag}
+            />
+          </div>
+
+          {/* Desktop Sidebar */}
+          <div className="hidden md:block">
+            <div className="sticky top-[8.5rem] space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>热门标签</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {popularTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {popularTags.map((tag) => (
+                        <Link key={tag.id} href={`/?tag=${tag.name}`}>
+                          <Badge variant="secondary" className="hover:bg-secondary/80">
+                            {tag.name}
+                            <span className="ml-1 text-xs">({tag.count})</span>
+                          </Badge>
+                        </Link>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState type="authors" />
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <EmptyState type="tags" />
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>活跃作者</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {popularAuthors.length > 0 ? (
+                    <div className="space-y-4">
+                      {popularAuthors.map((author) => (
+                        <div key={author.id} className="flex items-center justify-between">
+                          <Link
+                            href={`/users/${author.id}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {author.name || author.email}
+                          </Link>
+                          <span className="text-sm text-muted-foreground">
+                            {author.postsCount} 篇文章
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState type="authors" />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    </>
+  )
 }

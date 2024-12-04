@@ -6,9 +6,16 @@ import {
   Settings,
   MessageSquare,
   FolderHeart,
+  Home,
 } from "lucide-react";
 
 export const menuItems = [
+  {
+    title: "首页",
+    href: "/",
+    icon: Home,
+    permissions: [], // 所有登录用户可见
+  },
   {
     title: "仪表盘",
     href: "/dashboard",
