@@ -1,16 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hasPermission } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/constants/permissions";
 
 export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
+    const { id } = await Promise.resolve(context.params);
+    const body = await req.json();
+    
+    if (!body || typeof body.action !== 'string') {
+      return new Response(
+        JSON.stringify({ error: "无效的请求参数" }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    const { action } = body;
     const user = await checkAuth();
-    const { action } = await request.json();
 
     // 检查权限
     const requiredPermission =
@@ -19,27 +32,35 @@ export async function POST(
         : PERMISSIONS.COMMENT.REJECT;
 
     if (!hasPermission(user, requiredPermission)) {
-      return NextResponse.json(
-        { error: "没有权限执行此操作" },
-        { status: 403 }
+      return new Response(
+        JSON.stringify({ error: "没有权限执行此操作" }),
+        { 
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
-    const commentId = params.id;
     const comment = await prisma.comment.findUnique({
-      where: { id: commentId },
+      where: { id },
       include: {
         user: true,
       },
     });
 
     if (!comment) {
-      return NextResponse.json({ error: "评论不存在" }, { status: 404 });
+      return new Response(
+        JSON.stringify({ error: "评论不存在" }),
+        { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // 更新评论状态
     await prisma.comment.update({
-      where: { id: commentId },
+      where: { id },
       data: {
         status: action === "approve" ? "APPROVED" : "REJECTED",
       },
@@ -50,17 +71,27 @@ export async function POST(
       await prisma.user.update({
         where: { id: comment.userId },
         data: {
-          approvedCount: { increment: 1 },
+          approvedCount: {
+            increment: 1,
+          },
         },
       });
     }
 
-    return NextResponse.json({ success: true });
+    return new Response(
+      JSON.stringify({ success: true }),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   } catch (error) {
-    console.error("Error moderating comment:", error);
-    return NextResponse.json(
-      { error: "操作失败，请稍后重试" },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ error: "审核评论失败" }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }

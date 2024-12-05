@@ -75,18 +75,37 @@ export function PostEditor({ post }: PostEditorProps) {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch(post?.id ? `/api/posts/${post.id}` : "/api/posts", {
-        method: post?.id ? "PATCH" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          type: editorType,
-          status,
-          tags: selectedTags,
-        }),
-      });
+      // 确保内容不为空且为有效的 HTML 字符串
+      if (!data.content || data.content === "<p></p>") {
+        toast({
+          title: "错误",
+          description: "内容不能为空",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 清理和验证 HTML 内容
+      const cleanContent = data.content.trim();
+
+      const formData = {
+        ...data,
+        content: cleanContent,
+        type: editorType,
+        status,
+        tags: selectedTags,
+      };
+
+      const response = await fetch(
+        post?.id ? `/api/posts/${post.id}` : "/api/posts",
+        {
+          method: post?.id ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -99,13 +118,12 @@ export function PostEditor({ post }: PostEditorProps) {
       });
 
       router.push("/dashboard/posts");
-      router.refresh();
     } catch (error) {
-      console.error("Submit error:", error);
+      console.error("Error submitting post:", error);
       toast({
+        title: "错误",
+        description: error instanceof Error ? error.message : "操作失败，请稍后重试",
         variant: "destructive",
-        title: "操作失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
       });
     } finally {
       setIsSubmitting(false);
