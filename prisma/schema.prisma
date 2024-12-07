@@ -12,7 +12,7 @@ model User {
   id             String    @id @default(cuid())
   email          String    @unique
   password       String
-  name           String?
+  name           String?   @unique
   emailVerified  Boolean   @default(false)
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
@@ -23,6 +23,13 @@ model User {
   trustLevel     String    @default("new")
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret String?  // 用于存储 2FA 密钥
+
+  // 新增的个人资料字段
+  avatar        Bytes?    // 头像二进制数据，使用 BYTEA 类型
+  bio           String?   @db.Text  // 个人简介
+  website       String?   // 个人网站
+  location      String?   // 位置
+  socialLinks   Json?     // 社交媒体链接
 
   // 关联
   verifyToken   VerifyToken?

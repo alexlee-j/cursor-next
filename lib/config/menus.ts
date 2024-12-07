@@ -17,7 +17,7 @@ export const menuItems = [
     permissions: [], // 所有登录用户可见
   },
   {
-    title: "仪表盘",
+    title: "概览",
     href: "/dashboard",
     icon: LayoutDashboard,
     permissions: [], // 所有登录用户可见
@@ -47,9 +47,9 @@ export const menuItems = [
     permissions: [], // 所有登录用户可见
   },
   {
-    title: "系统设置",
+    title: "个人中心",
     href: "/dashboard/settings",
     icon: Settings,
-    permissions: [PERMISSIONS.SYSTEM.MANAGE_SETTINGS],
+    permissions: [],
   },
 ];

@@ -33,13 +33,18 @@ export function Sidebar({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <Link key={tag.id} href={`/?tag=${tag.name}`}>
-                <Badge variant="secondary" className="hover:bg-secondary/80">
-                  {tag.name} ({tag.count})
-                </Badge>
-              </Link>
-            ))}
+            {popularTags.map((tag) => {
+              // 确保标签名称被正确编码，特别是处理 # 等特殊字符
+              const encodedTag = encodeURIComponent(tag.name).replace(/%23/g, '%23');
+              console.log(encodedTag,'encodedTag');
+              return (
+                <Link key={tag.id} href={`/?tag=${encodedTag}`}>
+                  <Badge variant="secondary" className="hover:bg-secondary/80">
+                    {tag.name} ({tag.count})
+                  </Badge>
+                </Link>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

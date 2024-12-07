@@ -134,7 +134,7 @@ export default async function DashboardPage() {
   return (
     <DashboardShell>
       <DashboardHeader
-        heading="仪表盘"
+        heading="概览"
         text="查看您的博客数据概览和最近的活动。"
       />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

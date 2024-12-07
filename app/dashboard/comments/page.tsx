@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { CommentModeration } from "@/components/comment/comment-moderation";
 import { hasPermission } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/constants/permissions";
+import { DashboardShell } from "@/components/dashboard/shell";
+import { DashboardHeader } from "@/components/dashboard/header";
 
 export default async function CommentsPage() {
   const user = await checkAuth();
@@ -39,9 +41,12 @@ export default async function CommentsPage() {
   });
 
   return (
-    <div className="container py-6">
-      <h1 className="text-2xl font-bold mb-6">评论审核</h1>
+    <DashboardShell>
+      <DashboardHeader
+        heading="评论审核"
+        text="管理您收到的评论"
+      />
       <CommentModeration comments={pendingComments} />
-    </div>
+    </DashboardShell>
   );
 }

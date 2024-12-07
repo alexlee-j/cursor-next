@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserNav } from "@/components/layout/user-nav";
+import { prisma } from "@/lib/db";
 
 export default async function DashboardLayout({
   children,
@@ -13,6 +14,28 @@ export default async function DashboardLayout({
 
   if (!user) {
     redirect("/login");
+  }
+
+  const fullUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatar: true,
+      emailVerified: true,
+      trustLevel: true,
+    },
+  });
+
+  if (!fullUser) {
+    redirect("/login");
+  }
+
+  let userWithAvatar = { ...fullUser };
+  if (fullUser.avatar) {
+    const avatarBase64 = Buffer.from(fullUser.avatar).toString("base64");
+    userWithAvatar.avatar = `data:image/webp;base64,${avatarBase64}`;
   }
 
   return (
@@ -33,7 +56,7 @@ export default async function DashboardLayout({
               <DashboardNav />
             </div>
             <div className="ml-auto flex items-center gap-4">
-              <UserNav user={user} />
+              <UserNav user={userWithAvatar} />
               <ThemeToggle />
             </div>
           </div>

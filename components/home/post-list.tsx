@@ -79,7 +79,7 @@ export function PostList({
             <div className="flex flex-col space-y-4">
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
-                  <Link key={tag.id} href={`/?tag=${tag.name}`}>
+                  <Link key={tag.id} href={`/?tag=${encodeURIComponent(tag.name)}`}>
                     <Badge
                       variant="secondary"
                       className="hover:bg-secondary/80 whitespace-normal break-words"

@@ -199,18 +199,26 @@ export default async function HomePage({
 }: {
   searchParams: { page?: string; orderBy?: "latest" | "popular"; tag?: string };
 }) {
-  // 先等待 searchParams
   const params = {
     page: 1,
     orderBy: "latest" as const,
-    tag: undefined
+    tag: undefined as string | undefined
   };
 
   if (searchParams) {
     const resolvedParams = await searchParams;
     params.page = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
     params.orderBy = (resolvedParams.orderBy || "latest") as "latest" | "popular";
-    params.tag = resolvedParams.tag;
+    
+    // 确保正确解码标签，包括特殊字符
+    if (resolvedParams.tag) {
+      try {
+        params.tag = decodeURIComponent(resolvedParams.tag);
+      } catch (error) {
+        console.error("Error decoding tag:", error);
+        params.tag = resolvedParams.tag;
+      }
+    }
   }
 
   // 等待用户认证
@@ -227,20 +235,20 @@ export default async function HomePage({
   return (
     <>
       <SiteHeader user={user} />
-      <div className="container pb-6">
+      <div className="container space-y-4 md:space-y-6">
         {/* Tabs Section - Sticky on mobile and desktop */}
-        <div className="sticky top-[3.5rem] z-40 -mx-6 px-6 pt-6 pb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky top-[3.5rem] z-40 -mx-1 sm:-mx-2 md:-mx-8 px-1 sm:px-2 md:px-8 pt-2 pb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center space-x-4">
             <Tabs value={params.orderBy} className="w-full">
               <div className="flex items-center justify-between">
                 <TabsList>
                   <TabsTrigger value="latest" asChild>
-                    <Link href={`/?orderBy=latest${params.tag ? `&tag=${params.tag}` : ""}`}>
+                    <Link href={`/?orderBy=latest${params.tag ? `&tag=${encodeURIComponent(params.tag)}` : ""}`}>
                       最新发布
                     </Link>
                   </TabsTrigger>
                   <TabsTrigger value="popular" asChild>
-                    <Link href={`/?orderBy=popular${params.tag ? `&tag=${params.tag}` : ""}`}>
+                    <Link href={`/?orderBy=popular${params.tag ? `&tag=${encodeURIComponent(params.tag)}` : ""}`}>
                       最受欢迎
                     </Link>
                   </TabsTrigger>
@@ -307,7 +315,7 @@ export default async function HomePage({
                   {popularTags.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {popularTags.map((tag) => (
-                        <Link key={tag.id} href={`/?tag=${tag.name}`}>
+                        <Link key={tag.id} href={`/?tag=${encodeURIComponent(tag.name)}`}>
                           <Badge variant="secondary" className="hover:bg-secondary/80">
                             {tag.name}
                             <span className="ml-1 text-xs">({tag.count})</span>

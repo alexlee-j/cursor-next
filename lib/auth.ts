@@ -14,17 +14,20 @@ export async function checkAuth(required = false) {
     }
 
     try {
-      const decoded = verify(token.value, process.env.JWT_SECRET || "secret") as {
+      const decoded = verify(
+        token.value,
+        process.env.JWT_SECRET || "secret"
+      ) as {
         id: string;
         email: string;
         isVerified: boolean;
         exp: number;
       };
 
-      logger.info("Token decoded successfully", { 
+      logger.info("Token decoded successfully", {
         userId: decoded.id,
         email: decoded.email,
-        isVerified: decoded.isVerified
+        isVerified: decoded.isVerified,
       });
 
       const user = await prisma.user.findUnique({
@@ -35,6 +38,7 @@ export async function checkAuth(required = false) {
           id: true,
           email: true,
           name: true,
+          avatar: true,
           emailVerified: true,
           userRoles: {
             select: {
@@ -48,15 +52,15 @@ export async function checkAuth(required = false) {
                       permission: {
                         select: {
                           name: true,
-                          description: true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+                          description: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
 
@@ -66,43 +70,49 @@ export async function checkAuth(required = false) {
       }
 
       if (!user.emailVerified) {
-        logger.warn("User email not verified", { userId: user.id, email: user.email });
+        logger.warn("User email not verified", {
+          userId: user.id,
+          email: user.email,
+        });
         return null;
       }
 
-      const roles = user.userRoles.map(ur => ({
+      const roles = user.userRoles.map((ur) => ({
         id: ur.role.id,
         name: ur.role.name,
         description: ur.role.description,
-        permissions: ur.role.rolePermissions.map(rp => ({
+        permissions: ur.role.rolePermissions.map((rp) => ({
           name: rp.permission.name,
-          description: rp.permission.description
-        }))
+          description: rp.permission.description,
+        })),
       }));
 
-      logger.info("User authenticated successfully", { 
+      logger.info("User authenticated successfully", {
         userId: user.id,
         email: user.email,
-        roles: roles.map(r => r.name)
+        roles: roles.map((r) => r.name),
       });
 
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        emailVerified: user.emailVerified,
-        roles
-      };
+      let userWithAvatar = { ...user, roles };
+      if (user.avatar) {
+        const avatarBase64 = Buffer.from(user.avatar).toString("base64");
+        userWithAvatar.avatar = `data:image/webp;base64,${avatarBase64}`;
+      }
+
+      return userWithAvatar;
     } catch (verifyError) {
       logger.error("Token verification failed", {
-        error: verifyError instanceof Error ? verifyError.message : String(verifyError)
+        error:
+          verifyError instanceof Error
+            ? verifyError.message
+            : String(verifyError),
       });
       return null;
     }
   } catch (error) {
     logger.error("Authentication failed", {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return null;
   }

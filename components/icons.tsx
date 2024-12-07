@@ -5,6 +5,10 @@ import {
   User,
   Plus,
   MoreVertical,
+  Upload,
+  Twitter,
+  Github,
+  Linkedin,
 } from "lucide-react";
 
 export const Icons = {
@@ -13,6 +17,10 @@ export const Icons = {
   user: User,
   add: Plus,
   more: MoreVertical,
+  upload: Upload,
+  twitter: Twitter,
+  github: Github,
+  linkedin: Linkedin,
   logo: (props: LucideProps) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
