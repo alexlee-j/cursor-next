@@ -5,6 +5,12 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { FolderList } from "@/components/favorite/folder-list";
 import { FolderCreateButton } from "@/components/favorite/folder-create-button";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "收藏夹",
+  description: "管理您的收藏夹和收藏",
+};
 
 async function getFolders(userId: string) {
   const folders = await prisma.favoriteFolder.findMany({

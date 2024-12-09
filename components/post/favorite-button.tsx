@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bookmark } from "lucide-react";
+import { Icons } from "@/components/icons";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +66,7 @@ export function FavoriteButton({
       onClick={handleFavorite}
       disabled={isLoading}
     >
-      <Bookmark
+      <Icons.bookmark
         className={cn(
           "h-4 w-4 mr-1",
           favorited ? "fill-current text-yellow-500" : ""

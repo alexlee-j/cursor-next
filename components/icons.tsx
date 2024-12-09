@@ -9,6 +9,16 @@ import {
   Twitter,
   Github,
   Linkedin,
+  UserIcon,
+  EyeIcon,
+  HeartIcon,
+  BookmarkIcon,
+  MessageCircleIcon,
+  LinkIcon,
+  MapPinIcon,
+  CalendarIcon,
+  Search,
+  Menu
 } from "lucide-react";
 
 export const Icons = {
@@ -21,6 +31,16 @@ export const Icons = {
   twitter: Twitter,
   github: Github,
   linkedin: Linkedin,
+  userIcon: UserIcon,
+  eye: EyeIcon,
+  like: HeartIcon,
+  bookmark: BookmarkIcon,
+  comment: MessageCircleIcon,
+  link: LinkIcon,
+  location: MapPinIcon,
+  calendar: CalendarIcon,
+  search: Search,
+  menu: Menu,
   logo: (props: LucideProps) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"

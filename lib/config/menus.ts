@@ -36,7 +36,7 @@ export const menuItems = [
   },
   {
     title: "用户管理",
-    href: "/dashboard/users",
+    href: "/dashboard/usersManage",
     icon: Users,
     permissions: [PERMISSIONS.USER.MANAGE],
   },

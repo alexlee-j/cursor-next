@@ -6,6 +6,12 @@ import { hasPermission } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/constants/permissions";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "评论审核",
+  description: "管理您收到的评论",
+};
 
 export default async function CommentsPage() {
   const user = await checkAuth();

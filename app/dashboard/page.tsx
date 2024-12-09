@@ -4,6 +4,12 @@ import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { Overview } from "@/components/dashboard/overview";
 import { prisma } from "@/lib/db";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "概览",
+  description: "查看您的博客数据概览和最近的活动。",
+};
 
 interface DashboardData {
   totalPosts: number;

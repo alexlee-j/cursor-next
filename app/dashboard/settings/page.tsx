@@ -111,6 +111,14 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "文件太大",
+        description: "请上传小于2MB的文件",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const formData = new FormData();
     formData.append("avatar", file);

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Icons } from "@/components/icons";
 
 interface Tag {
   id: string;
@@ -89,7 +89,7 @@ export function TagSelect({
         <PopoverContent className="w-[280px] p-0" align="start">
           <div className="p-2 border-b">
             <div className="flex items-center gap-2 px-2 py-1 border rounded-md focus-within:ring-1">
-              <Search className="w-4 h-4 text-muted-foreground" />
+              <Icons.search className="w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

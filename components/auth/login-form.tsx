@@ -40,27 +40,45 @@ export function LoginForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [isCaptchaReady, setIsCaptchaReady] = useState(false);
   const captchaRef = useRef<HTMLDivElement>(null);
   const captchaInitialized = useRef(false);
 
   useEffect(() => {
-    if (showCaptcha && !captchaInitialized.current && captchaRef.current) {
+    if (showCaptcha) {
       try {
         loadCaptchaEnginge(6);
         captchaInitialized.current = true;
+        setIsCaptchaReady(true);
       } catch (error) {
-        console.error('验证码加载失败，请刷新页面重试');
+        console.error('验证码加载失败：', error);
+        setIsCaptchaReady(false);
+        toast({
+          variant: "destructive",
+          title: "错误",
+          description: "验证码加载失败，请刷新页面重试",
+        });
       }
     }
   }, [showCaptcha]);
 
   const reloadCaptcha = () => {
-    if (captchaRef.current) {
-      try {
-        loadCaptchaEnginge(6);
-      } catch (error) {
-        console.error('验证码刷新失败，请刷新页面重试');
-      }
+    if (!isCaptchaReady) {
+      console.warn('验证码组件未准备好，无法重新加载');
+      return;
+    }
+
+    try {
+      loadCaptchaEnginge(6);
+      console.log('验证码已重新加载');
+    } catch (error) {
+      console.error('验证码刷新失败：', error);
+      setIsCaptchaReady(false);
+      toast({
+        variant: "destructive",
+        title: "错误",
+        description: "验证码刷新失败，请刷新页面重试",
+      });
     }
   };
 

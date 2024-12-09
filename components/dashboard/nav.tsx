@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Icons } from "@/components/icons";
 import { useEffect, useState } from "react";
 
 export function DashboardNav() {
@@ -85,7 +85,7 @@ export function DashboardNav() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button className="p-2">
-            <Menu className="h-6 w-6" />
+            <Icons.menu className="h-6 w-6" />
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-[240px] sm:w-[280px]">

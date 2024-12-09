@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Icons } from "@/components/icons";
 import { useState } from "react";
 import { DashboardNav } from "./nav";
 
@@ -15,7 +15,7 @@ export function SidebarContainer() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
+            <Icons.menu className="h-5 w-5" />
             <span className="sr-only">打开菜单</span>
           </Button>
         </SheetTrigger>

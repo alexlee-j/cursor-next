@@ -8,6 +8,12 @@ import { EmptyState } from "@/components/home/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/layout/site-header";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "首页",
+  description: "博客系统首页",
+};
 
 const POSTS_PER_PAGE = 10;
 

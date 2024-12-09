@@ -5,6 +5,12 @@ import { DashboardShell } from "@/components/dashboard/shell";
 import { PostCreateButton } from "@/components/post/post-create-button";
 import { PostList } from "@/components/post/post-list";
 import { prisma } from "@/lib/db";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "文章管理",
+  description: "创建和管理您的博客文章。",
+};
 
 const POSTS_PER_PAGE = 10;
 
