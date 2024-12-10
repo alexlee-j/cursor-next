@@ -24,7 +24,13 @@ async function getPost(id: string) {
   if (!post) return null;
 
   return {
-    ...post,
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    excerpt: post.excerpt || undefined,
+    type: post.type,
+    status: post.status,
+    authorId: post.authorId,
     tags: post.postTags.map((pt) => ({
       id: pt.tag.id,
       name: pt.tag.name,

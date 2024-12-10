@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();
@@ -63,7 +62,7 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();

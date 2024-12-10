@@ -5,12 +5,11 @@ import {
   shouldAutoApprove,
   updateUserTrustLevel,
 } from "@/lib/comment-moderation";
-import type { RouteHandlerContext } from "next/server";
 
 // 获取评论列表
 export async function GET(
   req: Request,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: postId } = await Promise.resolve((await context.params));
@@ -71,7 +70,7 @@ export async function GET(
 // 发表评论
 export async function POST(
   request: Request,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();

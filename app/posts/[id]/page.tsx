@@ -13,6 +13,40 @@ import { QuickActions } from "@/components/post/quick-actions";
 import { FollowButton } from "@/components/user/follow-button";
 import { PostActionsProvider } from "@/components/post/post-actions-context";
 
+type Comment = {
+  id: string;
+  content: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  autoApproved: boolean;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    isAuthor?: boolean;
+  };
+  replies: {
+    id: string;
+    content: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+    autoApproved: boolean;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      isAuthor?: boolean;
+    };
+    replyTo: {
+      id: string;
+      name: string | null;
+      email: string;
+    } | null;
+  }[];
+};
+
 type PostWithRelations = Post & {
   author: {
     id: string;
@@ -22,7 +56,9 @@ type PostWithRelations = Post & {
   comments: {
     id: string;
     content: string;
+    status: string;
     createdAt: Date;
+    autoApproved: boolean;
     user: {
       id: string;
       name: string | null;
@@ -32,7 +68,9 @@ type PostWithRelations = Post & {
     replies: {
       id: string;
       content: string;
+      status: string;
       createdAt: Date;
+      autoApproved: boolean;
       user: {
         id: string;
         name: string | null;
@@ -43,7 +81,7 @@ type PostWithRelations = Post & {
         id: string;
         name: string | null;
         email: string;
-      };
+      } | null;
     }[];
   }[];
   _count: {
@@ -257,17 +295,26 @@ async function getPost(
     // 处理评论数据，添加作者标识
     const commentsWithAuthorFlag = post.comments.map((comment) => {
       const processedComment = {
-        ...comment,
+        id: comment.id,
+        content: comment.content,
+        status: comment.status,
+        createdAt: comment.createdAt,
+        autoApproved: comment.autoApproved,
         user: {
           ...comment.user,
           isAuthor: comment.user.id === post.authorId,
         },
         replies: comment.replies.map((reply) => ({
-          ...reply,
+          id: reply.id,
+          content: reply.content,
+          status: reply.status,
+          createdAt: reply.createdAt,
+          autoApproved: reply.autoApproved,
           user: {
             ...reply.user,
             isAuthor: reply.user.id === post.authorId,
           },
+          replyTo: reply.replyTo,
         })),
       };
 
@@ -282,6 +329,7 @@ async function getPost(
           name: pt.tag.name,
         })),
         comments: commentsWithAuthorFlag,
+        excerpt: post.excerpt || null,
       },
       liked,
       favoriteFolders,

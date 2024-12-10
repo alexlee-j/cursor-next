@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { ROLE_PERMISSIONS } from "./constants/permissions";
-import type { User } from "@prisma/client";
+import { AuthUser } from "@/types/user";
 
 export async function getUserPermissions(userId: string): Promise<string[]> {
   const userRoles = await prisma.userRole.findMany({
@@ -30,7 +30,7 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
 }
 
 export async function hasPermission(
-  user: User | null,
+  user: AuthUser | null,
   permission: string
 ): Promise<boolean> {
   if (!user) return false;
@@ -40,7 +40,7 @@ export async function hasPermission(
 }
 
 export async function hasAnyPermission(
-  user: User | null,
+  user: AuthUser | null,
   permissions: string[]
 ): Promise<boolean> {
   if (!user) return false;
@@ -50,7 +50,7 @@ export async function hasAnyPermission(
 }
 
 export async function hasAllPermissions(
-  user: User | null,
+  user: AuthUser | null,
   permissions: string[]
 ): Promise<boolean> {
   if (!user) return false;

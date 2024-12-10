@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   request: Request,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // 1. 获取并验证动态参数

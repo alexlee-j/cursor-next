@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAuth } from "@/lib/auth";
-import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();

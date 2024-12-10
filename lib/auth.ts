@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/utils/logger";
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
+import { AuthUser } from "@/types/user";
 
 export const authOptions = {
   providers: [
@@ -22,7 +23,7 @@ export const authOptions = {
 
 export default NextAuth(authOptions);
 
-export async function checkAuth(required = false) {
+export async function checkAuth(required = false): Promise<AuthUser | null> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token");
@@ -54,9 +55,13 @@ export async function checkAuth(required = false) {
           id: decoded.id,
         },
         include: {
-          roles: {
+          userRoles: {
             include: {
-              permissions: true
+              role: {
+                include: {
+                  permissions: true
+                }
+              }
             }
           }
         }
@@ -78,7 +83,7 @@ export async function checkAuth(required = false) {
       logger.info("User authenticated successfully", {
         userId: user.id,
         email: user.email,
-        roles: user.roles.map((r) => r.name),
+        roles: user.userRoles.map((r) => r.role.name),
       });
 
       let userWithAvatar = { ...user };

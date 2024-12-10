@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAuth } from "@/lib/auth";
 import { PERMISSIONS } from "@/lib/constants/permissions";
+import { hasAllPermissions } from "@/lib/permissions";
 
 // 获取用户列表
 export async function GET(request: Request) {
   try {
     const user = await checkAuth();
-    if (!user || !user.roles.some(role => role.permissions.some(p => p.name === PERMISSIONS.USER.MANAGE))) {
+    if (!user || !(await hasAllPermissions(user, [PERMISSIONS.USER.MANAGE]))) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -18,16 +19,12 @@ export async function GET(request: Request) {
     const status = searchParams.get("status");
 
     const where = {
-      AND: [
-        {
-          OR: [
-            { email: { contains: search, mode: "insensitive" } },
-            { name: { contains: search, mode: "insensitive" } },
-          ],
-        },
-        status === "active" ? { isActive: true } :
-        status === "inactive" ? { isActive: false } : {},
+      OR: [
+        { email: { contains: search, mode: "insensitive" as const } },
+        { name: { contains: search, mode: "insensitive" as const } },
       ],
+      ...(status === "active" ? { isActive: true } : 
+          status === "inactive" ? { isActive: false } : {}),
     };
 
     const [users, total] = await Promise.all([
@@ -85,7 +82,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const user = await checkAuth();
-    if (!user || !user.roles.some(role => role.permissions.some(p => p.name === PERMISSIONS.USER.MANAGE))) {
+    if (!user || !(await hasAllPermissions(user, [PERMISSIONS.USER.MANAGE]))) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

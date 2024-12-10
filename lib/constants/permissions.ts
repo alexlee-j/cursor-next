@@ -41,6 +41,7 @@ const ADMIN_PERMISSIONS = {
     APPROVE: "comment:approve", // 审核评论
     REJECT: "comment:reject", // 拒绝评论
     MANAGE: "comment:manage", // 管理评论
+    VIEW_PENDING: "comment:view_pending", // 查看待审核评论
   },
   USER: {
     VIEW: "user:view", // 查看用户信息

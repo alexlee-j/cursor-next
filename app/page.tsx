@@ -206,17 +206,20 @@ export default async function HomePage(
   }
 ) {
   const searchParams = await props.searchParams;
+  // 定义排序类型
+  type OrderBy = "latest" | "popular";
+
   const params = {
     page: 1,
-    orderBy: "latest" as const,
+    orderBy: "latest" as OrderBy,
     tag: undefined as string | undefined
   };
 
   if (searchParams) {
     const resolvedParams = await searchParams;
     params.page = resolvedParams.page ? parseInt(resolvedParams.page, 10) : 1;
-    params.orderBy = (resolvedParams.orderBy || "latest") as "latest" | "popular";
-    
+    params.orderBy = (resolvedParams.orderBy || "latest") as OrderBy;
+
     // 确保正确解码标签，包括特殊字符
     if (resolvedParams.tag) {
       try {

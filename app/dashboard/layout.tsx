@@ -5,6 +5,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserNav } from "@/components/layout/user-nav";
 import { prisma } from "@/lib/db";
 
+type UserWithAvatar = {
+  id: string;
+  name: string | null;
+  email: string;
+  avatar: string | null;
+  emailVerified: boolean;
+  trustLevel: string;
+};
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -32,7 +41,15 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  let userWithAvatar = { ...fullUser };
+  let userWithAvatar = {
+    id: fullUser.id,
+    name: fullUser.name,
+    email: fullUser.email,
+    emailVerified: fullUser.emailVerified,
+    trustLevel: fullUser.trustLevel,
+    avatar: null as string | null,
+  };
+
   if (fullUser.avatar) {
     const avatarBase64 = Buffer.from(fullUser.avatar).toString("base64");
     userWithAvatar.avatar = `data:image/webp;base64,${avatarBase64}`;

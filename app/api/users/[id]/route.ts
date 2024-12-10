@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
-import { RouteHandlerContext } from "next/dist/server/web/types";
 
 export async function GET(
   request: Request,
-  context: RouteHandlerContext<{ id: string }> // 使用 context 来获取动态路由的参数
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
-  const { id } = await params;
+  const { id } = await Promise.resolve((await context.params));
 
   if (!id) {
     return NextResponse.json(

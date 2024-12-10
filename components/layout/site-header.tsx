@@ -1,10 +1,10 @@
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { User } from "@prisma/client"
+import { AuthUser } from "@/types/user"
 import { UserNav } from "./user-nav"
 
 interface SiteHeaderProps {
-  user: User | null
+  user: AuthUser | null
 }
 
 export function SiteHeader({ user }: SiteHeaderProps) {

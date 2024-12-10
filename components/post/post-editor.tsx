@@ -27,6 +27,8 @@ interface Tag {
   name: string;
 }
 
+export type PostStatus = "DRAFT" | "PUBLISHED";
+
 const postFormSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
   content: z.string().min(1, { message: "内容不能为空" }),
@@ -34,8 +36,6 @@ const postFormSchema = z.object({
 });
 
 type PostFormValues = z.infer<typeof postFormSchema>;
-
-type PostStatus = "DRAFT" | "PUBLISHED";
 
 interface PostEditorProps {
   post?: {

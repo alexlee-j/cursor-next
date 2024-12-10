@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/dashboard/shell";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { UserList } from "@/components/user/user-list";
 import { PERMISSIONS } from "@/lib/constants/permissions";
+import { AuthUser } from "@/types/user";
 
 export const metadata: Metadata = {
   title: "用户管理",
@@ -12,9 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function UsersManagePage() {
-  const user = await checkAuth();
+  const user = await checkAuth() as AuthUser;
 
-  if (!user || !user.roles.some(role => role.permissions.some(p => p.name === PERMISSIONS.USER.MANAGE))) {
+  // 确保用户存在并且有管理权限
+  if (!user || !user.userRoles?.some(userRole => userRole.role.permissions?.some(p => p.name === PERMISSIONS.USER.MANAGE))) {
     redirect("/");
   }
 

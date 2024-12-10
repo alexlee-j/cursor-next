@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import * as z from "zod";
-import type { RouteHandlerContext } from "next/server";
+import { hasAllPermissions } from "@/lib/permissions";
+import { PERMISSIONS } from "@/lib/constants/permissions";
 
 const updatePostSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
@@ -22,7 +23,7 @@ const updatePostSchema = z.object({
 
 export async function DELETE(
   req: Request,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();
@@ -40,9 +41,9 @@ export async function DELETE(
       return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    // 检查用户是否为管理员或文章作者
-    const isAdmin = user.roles?.includes("admin");
-    if (!isAdmin && post.authorId !== user.id) {
+    // 检查用户是否有管理权限或是文章作者
+    const hasManagePermission = await hasAllPermissions(user, [PERMISSIONS.POST.MANAGE]);
+    if (!hasManagePermission && post.authorId !== user.id) {
       return NextResponse.json({ error: "无权删除此文章" }, { status: 403 });
     }
 
@@ -65,7 +66,7 @@ export async function DELETE(
 // 更新文章
 export async function PATCH(
   req: Request,
-  context: RouteHandlerContext<{ id: string }>
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await checkAuth();
@@ -97,9 +98,9 @@ export async function PATCH(
       return NextResponse.json({ error: "文章不存在" }, { status: 404 });
     }
 
-    // 检查用户是否为管理员或文章作者
-    const isAdmin = user.roles?.includes("admin");
-    if (!isAdmin && existingPost.authorId !== user.id) {
+    // 检查用户是否有管理权限或是文章作者
+    const hasManagePermission = await hasAllPermissions(user, [PERMISSIONS.POST.MANAGE]);
+    if (!hasManagePermission && existingPost.authorId !== user.id) {
       return NextResponse.json(
         { error: "无权更新此文章" },
         { status: 403 }

@@ -61,16 +61,17 @@ export default async function PostsPage() {
       excerpt: post.excerpt,
       status: post.status,
       authorId: post.authorId,
-      createdAt: post.createdAt.toISOString(),
-      updatedAt: post.updatedAt.toISOString(),
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
       author: {
-        id: user.id,
-        ...post.author
+        name: post.author.name,
+        email: post.author.email,
       },
       tags: post.postTags.map((pt) => pt.tag),
       commentsCount: post._count.comments,
       likesCount: post._count.likes,
       favoritesCount: post._count.favorites,
+      viewCount: 0,
     }));
 
     const totalPages = Math.ceil(total / POSTS_PER_PAGE);
