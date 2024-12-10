@@ -4,6 +4,12 @@ import { prisma } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { PostList } from "@/components/favorite/post-list";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "收藏夹",
+  description: "查看收藏夹内容",
+};
 
 const POSTS_PER_PAGE = 10;
 

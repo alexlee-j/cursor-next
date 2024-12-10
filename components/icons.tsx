@@ -18,7 +18,9 @@ import {
   MapPinIcon,
   CalendarIcon,
   Search,
-  Menu
+  Menu,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 
 export const Icons = {
@@ -52,4 +54,6 @@ export const Icons = {
       <circle cx="12" cy="12" r="10" />
     </svg>
   ),
+  spinner: Loader2,
+  trash: Trash2,
 };
