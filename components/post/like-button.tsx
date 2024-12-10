@@ -8,14 +8,20 @@ import { usePostActions } from "./post-actions-context";
 
 interface LikeButtonProps {
   postId: string;
+  initialLiked: boolean;
+  initialCount: number;
 }
 
 export function LikeButton({
   postId,
+  initialLiked,
+  initialCount,
 }: LikeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
+  const [likesCount, setLikesCount] = useState(initialCount);
   const { toast } = useToast();
-  const { liked, likesCount, setLiked, setLikesCount } = usePostActions();
+  const { setLiked: setLikedContext, setLikesCount: setLikesCountContext } = usePostActions();
 
   const toggleLike = async () => {
     try {

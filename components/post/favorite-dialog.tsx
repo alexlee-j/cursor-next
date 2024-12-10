@@ -26,11 +26,13 @@ interface FavoriteDialogProps {
     isDefault: boolean;
     isFavorited: boolean;
   }[];
+  initialCount: number;
 }
 
 export function FavoriteDialog({
   postId,
   initialFolders,
+  initialCount,
 }: FavoriteDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [folders, setFolders] = useState(initialFolders || []);
@@ -185,7 +187,7 @@ export function FavoriteDialog({
                 : "hover:text-yellow-500/80"
             }`}
           />
-          <span>{favoritesCount}</span>
+          <span>{initialCount}</span>
         </Button>
       </DialogTrigger>
 

@@ -329,7 +329,7 @@ async function getPost(
           name: pt.tag.name,
         })),
         comments: commentsWithAuthorFlag,
-        excerpt: post.excerpt || null,
+        excerpt: post.excerpt || "", // 确保类型为 string
       },
       liked,
       favoriteFolders,
@@ -412,9 +412,9 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
                   </span>
                   {!isAuthor && (
                     <FollowButton
-                      authorId={post.authorId}
-                      initialIsFollowing={isFollowing}
-                      initialCount={followersCount}
+                      userId={post.authorId}
+                      isFollowing={isFollowing}
+                      followersCount={followersCount}
                     />
                   )}
                 </div>
