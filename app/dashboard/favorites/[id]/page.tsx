@@ -80,13 +80,14 @@ async function getFolderPosts(
   };
 }
 
-export default async function FolderPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { page?: string };
-}) {
+export default async function FolderPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const user = await checkAuth();
   if (!user) {
     redirect("/login");

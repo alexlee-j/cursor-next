@@ -138,7 +138,7 @@ async function getUserData(userId: string, currentUserId?: string) {
   }
 }
 
-export default async function UserProfilePage({ params }: { params: { id: string } }) {
+export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: userId } = await params;
   const currentUser = await checkAuth();
   

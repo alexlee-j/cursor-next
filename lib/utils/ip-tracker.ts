@@ -6,6 +6,7 @@ interface GeoLocation {
   city?: string;
   latitude?: number;
   longitude?: number;
+  [key: string]: any;
 }
 
 interface TrackInfo {

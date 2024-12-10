@@ -1,19 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
 // 更新收藏夹
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, props: RouteContext): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const user = await checkAuth();
+    const { id } = params;
     if (!user) {
       return NextResponse.json({ error: "请先登录" }, { status: 401 });
     }
 
-    const { name, description } = await request.json();
+    const { name, description } = await req.json();
 
     // 验证名称
     if (!name?.trim()) {
@@ -26,7 +31,7 @@ export async function PATCH(
     // 检查收藏夹是否存在且属于当前用户
     const folder = await prisma.favoriteFolder.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
     });
@@ -52,7 +57,7 @@ export async function PATCH(
         where: {
           userId: user.id,
           name: name.trim(),
-          id: { not: params.id },
+          id: { not: id },
         },
       });
 
@@ -65,7 +70,7 @@ export async function PATCH(
     }
 
     const updatedFolder = await prisma.favoriteFolder.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name: name.trim(),
         description: description?.trim() || null,
@@ -80,12 +85,11 @@ export async function PATCH(
 }
 
 // 删除收藏夹
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, props: RouteContext): Promise<NextResponse> {
+  const params = await props.params;
   try {
     const user = await checkAuth();
+    const { id } = params;
     if (!user) {
       return NextResponse.json({ error: "请先登录" }, { status: 401 });
     }
@@ -93,7 +97,7 @@ export async function DELETE(
     // 检查收藏夹是否存在且属于当前用户
     const folder = await prisma.favoriteFolder.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: user.id,
       },
     });
@@ -115,7 +119,7 @@ export async function DELETE(
 
     // 删除收藏夹（关联的收藏会自动删除）
     await prisma.favoriteFolder.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true });

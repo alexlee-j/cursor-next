@@ -6,9 +6,7 @@ import { PostEditor } from "@/components/post/post-editor";
 import { prisma } from "@/lib/db";
 
 interface PostPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 async function getPost(id: string) {

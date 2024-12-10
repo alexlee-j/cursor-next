@@ -5,14 +5,15 @@ import {
   shouldAutoApprove,
   updateUserTrustLevel,
 } from "@/lib/comment-moderation";
+import type { RouteHandlerContext } from "next/server";
 
 // 获取评论列表
 export async function GET(
   req: Request,
-  context: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
-    const { id: postId } = await Promise.resolve(context.params);
+    const { id: postId } = await Promise.resolve((await context.params));
 
     // 只获取顶层已审核的评论
     const comments = await prisma.comment.findMany({
@@ -70,7 +71,7 @@ export async function GET(
 // 发表评论
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
@@ -79,7 +80,7 @@ export async function POST(
     }
 
     const { content, parentId, replyToId } = await request.json();
-    const { id: postId } = await Promise.resolve(context.params);
+    const { id: postId } = await Promise.resolve((await context.params));
 
     // 验证文章是否存在
     const post = await prisma.post.findUnique({

@@ -38,8 +38,9 @@ const ADMIN_PERMISSIONS = {
   },
   COMMENT: {
     ...USER_PERMISSIONS.COMMENT,
-    MANAGE: "comment:manage", // 管理所有评论
     APPROVE: "comment:approve", // 审核评论
+    REJECT: "comment:reject", // 拒绝评论
+    MANAGE: "comment:manage", // 管理评论
   },
   USER: {
     VIEW: "user:view", // 查看用户信息

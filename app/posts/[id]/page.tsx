@@ -300,7 +300,8 @@ async function getPost(
   }
 }
 
-export default async function PostPage({ params }: { params: { id: string } }) {
+export default async function PostPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     // 1. 先处理动态参数
     const { id } = await Promise.resolve(params);

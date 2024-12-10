@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import * as z from "zod";
+import type { RouteHandlerContext } from "next/server";
 
 const updatePostSchema = z.object({
   title: z.string().min(1, { message: "标题不能为空" }),
@@ -21,7 +22,7 @@ const updatePostSchema = z.object({
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
@@ -29,8 +30,10 @@ export async function DELETE(
       return NextResponse.json({ error: "未授权" }, { status: 401 });
     }
 
+    const { id: postId } = await Promise.resolve((await context.params));
+
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id: postId },
     });
 
     if (!post) {
@@ -44,7 +47,7 @@ export async function DELETE(
     }
 
     await prisma.post.delete({
-      where: { id: params.id },
+      where: { id: postId },
     });
 
     return NextResponse.json({
@@ -62,13 +65,15 @@ export async function DELETE(
 // 更新文章
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
     if (!user) {
       return NextResponse.json({ error: "未授权" }, { status: 401 });
     }
+
+    const { id } = await Promise.resolve((await context.params));
 
     const body = await req.json();
 
@@ -85,7 +90,7 @@ export async function PATCH(
 
     // 检查文章是否存在
     const existingPost = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     if (!existingPost) {
@@ -103,12 +108,12 @@ export async function PATCH(
 
     // 首先删除现有的标签关联
     await prisma.postTag.deleteMany({
-      where: { postId: params.id },
+      where: { postId: id },
     });
 
     // 更新文章和标签
     const post = await prisma.post.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         title,
         content,

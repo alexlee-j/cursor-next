@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
@@ -12,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const postId = await params.id;
+    const { id: postId } = await Promise.resolve((await context.params));
 
     // 检查文章是否存在
     const post = await prisma.post.findUnique({
@@ -62,7 +63,7 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
@@ -70,7 +71,7 @@ export async function DELETE(
       return NextResponse.json({ error: "未授权访问" }, { status: 401 });
     }
 
-    const postId = await params.id;
+    const { id: postId } = await Promise.resolve((await context.params));
 
     // 检查点赞记录是否存在
     const like = await prisma.like.findFirst({

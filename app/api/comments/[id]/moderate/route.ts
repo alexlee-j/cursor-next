@@ -1,15 +1,15 @@
 import { NextRequest } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { hasPermission } from "@/lib/permissions";
+import { hasAllPermissions } from "@/lib/permissions";
 import { PERMISSIONS } from "@/lib/constants/permissions";
 
 export async function POST(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await Promise.resolve(context.params);
+    const { id } = await Promise.resolve((await context.params));
     const body = await req.json();
     
     if (!body || typeof body.action !== 'string') {
@@ -26,12 +26,11 @@ export async function POST(
     const user = await checkAuth();
 
     // 检查权限
-    const requiredPermission =
-      action === "approve"
-        ? PERMISSIONS.COMMENT.APPROVE
-        : PERMISSIONS.COMMENT.REJECT;
+    const requiredPermission = action === "approve"
+      ? [PERMISSIONS.COMMENT.APPROVE]
+      : [PERMISSIONS.COMMENT.REJECT];
 
-    if (!hasPermission(user, requiredPermission)) {
+    if (!(await hasAllPermissions(user, requiredPermission))) {
       return new Response(
         JSON.stringify({ error: "没有权限执行此操作" }),
         { 

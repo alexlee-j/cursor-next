@@ -49,7 +49,9 @@ export async function sendVerificationEmail(
             或者复制以下链接到浏览器：<br/>
             <a href="${verificationUrl}" style="color: #0070f3;">${verificationUrl}</a>
           </p>
-          <p style="color: #666; font-size: 14px;">此链接24小时内有效。</p>
+          <p style="color: #666; font-size: 14px;">
+            此链接24小时内有效。
+          </p>
           <p style="color: #999; font-size: 12px; margin-top: 30px;">
             如果您没有注册账号，请忽略此邮件。
           </p>
@@ -62,5 +64,44 @@ export async function sendVerificationEmail(
   } catch (error) {
     console.error("发送邮件失败:", error);
     throw new Error("发送验证邮件失败，请检查邮箱配置");
+  }
+}
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const resetUrl = `${process.env.BASE_URL}/reset-password?token=${token}`;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"博客系统" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: "重置密码",
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+          <h1 style="color: #333; text-align: center;">重置您的密码</h1>
+          <p style="color: #666; font-size: 16px;">您好，</p>
+          <p style="color: #666; font-size: 16px;">请点击下面的链接重置您的密码：</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background-color: #0070f3; color: white; padding: 12px 24px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              重置密码
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            或者复制以下链接到浏览器：<br/>
+            <a href="${resetUrl}" style="color: #0070f3;">${resetUrl}</a>
+          </p>
+          <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            如果您没有请求重置密码，请忽略此邮件。
+          </p>
+        </div>
+      `,
+    });
+
+    console.log("重置密码邮件发送成功:", info.messageId);
+    return info;
+  } catch (error) {
+    console.error("发送重置密码邮件失败:", error);
+    throw new Error("发送邮件失败");
   }
 }

@@ -2,6 +2,25 @@ import { cookies } from "next/headers";
 import { verify } from "jsonwebtoken";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/utils/logger";
+import NextAuth from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+
+export const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
+  session: {
+    strategy: 'jwt' as const,
+  },
+  pages: {
+    signIn: '/auth/signin',
+  },
+};
+
+export default NextAuth(authOptions);
 
 export async function checkAuth(required = false) {
   try {
@@ -34,34 +53,13 @@ export async function checkAuth(required = false) {
         where: {
           id: decoded.id,
         },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          avatar: true,
-          emailVerified: true,
-          userRoles: {
-            select: {
-              role: {
-                select: {
-                  id: true,
-                  name: true,
-                  description: true,
-                  rolePermissions: {
-                    select: {
-                      permission: {
-                        select: {
-                          name: true,
-                          description: true,
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        include: {
+          roles: {
+            include: {
+              permissions: true
+            }
+          }
+        }
       });
 
       if (!user) {
@@ -77,23 +75,13 @@ export async function checkAuth(required = false) {
         return null;
       }
 
-      const roles = user.userRoles.map((ur) => ({
-        id: ur.role.id,
-        name: ur.role.name,
-        description: ur.role.description,
-        permissions: ur.role.rolePermissions.map((rp) => ({
-          name: rp.permission.name,
-          description: rp.permission.description,
-        })),
-      }));
-
       logger.info("User authenticated successfully", {
         userId: user.id,
         email: user.email,
-        roles: roles.map((r) => r.name),
+        roles: user.roles.map((r) => r.name),
       });
 
-      let userWithAvatar = { ...user, roles };
+      let userWithAvatar = { ...user };
       if (user.avatar) {
         const avatarBase64 = Buffer.from(user.avatar).toString("base64");
         userWithAvatar.avatar = `data:image/webp;base64,${avatarBase64}`;

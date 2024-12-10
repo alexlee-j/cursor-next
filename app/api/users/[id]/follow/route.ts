@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { checkAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   request: Request,
-  context: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     // 1. 获取并验证动态参数
-    const { id: followingId } = await Promise.resolve(context.params);
+    const { id: followingId } = await Promise.resolve((await context.params));
     
     if (!followingId) {
       return NextResponse.json(

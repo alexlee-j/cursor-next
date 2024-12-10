@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -35,12 +36,12 @@ export async function POST(request: Request) {
     });
 
     // 发送重置密码邮件
-    await sendPasswordResetEmail(user.email, resetToken.token);
+    // await sendPasswordResetEmail(user.email, resetToken.token);
 
-    return NextResponse.json({
-      success: true,
-      message: "重置密码邮件已发送，请查收",
-    });
+    // return NextResponse.json({
+    //   success: true,
+    //   message: "重置密码邮件已发送，请查收",
+    // });
   } catch (error) {
     console.error("FORGOT_PASSWORD_ERROR:", error);
     return NextResponse.json(

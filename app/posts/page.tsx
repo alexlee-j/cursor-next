@@ -8,11 +8,12 @@ import { redirect } from "next/navigation";
 
 const POSTS_PER_PAGE = 10;
 
-export default async function PostsPage({
-  searchParams,
-}: {
-  searchParams: { page?: string; orderBy?: "latest" | "popular" };
-}) {
+export default async function PostsPage(
+  props: {
+    searchParams: Promise<{ page?: string; orderBy?: "latest" | "popular" }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   try {
     const user = await checkAuth();
 

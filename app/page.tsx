@@ -200,11 +200,12 @@ async function getPopularAuthors() {
   }
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { page?: string; orderBy?: "latest" | "popular"; tag?: string };
-}) {
+export default async function HomePage(
+  props: {
+    searchParams: Promise<{ page?: string; orderBy?: "latest" | "popular"; tag?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const params = {
     page: 1,
     orderBy: "latest" as const,

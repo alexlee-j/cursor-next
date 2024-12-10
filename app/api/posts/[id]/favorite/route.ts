@@ -1,20 +1,22 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkAuth } from "@/lib/auth";
+import type { RouteHandlerContext } from "next/server";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteHandlerContext<{ id: string }>
 ) {
   try {
     const user = await checkAuth();
+    const {id} = await Promise.resolve((await context.params));
 
     if (!user) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { folderId } = await request.json();
-    const postId = params.id;
+    const postId = id;
 
     const existingFavorite = await prisma.favorite.findFirst({
       where: {
