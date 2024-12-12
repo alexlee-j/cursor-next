@@ -10,13 +10,22 @@ interface PostCardProps {
   post: {
     id: string;
     title: string;
+    type: string;
+    content: string;
+    excerpt: string | null;
     status: "DRAFT" | "PUBLISHED";
     createdAt: Date;
     updatedAt: Date;
     viewCount: number;
-    likesCount?: number;
+    likesCount: number;
+    favoritesCount: number;
+    authorId: string;
+    author: {
+      id: string;
+      name?: string;
+      email?: string;
+    };
     commentsCount?: number;
-    bookmarksCount?: number;
   };
 }
 
@@ -39,30 +48,12 @@ export function PostCard({ post }: PostCardProps) {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            创建于 {formatDate(post.createdAt)}
-            {post.updatedAt > post.createdAt &&
-              ` · 更新于 ${formatDate(post.updatedAt)}`}
+            创建于 {formatDate(post.createdAt)} · {post.viewCount} 次浏览 ·{" "}
+            {post.likesCount || 0} 次点赞 · {post.commentsCount || 0} 条评论 ·{" "}
+            {post.favoritesCount || 0} 次收藏
           </p>
         </div>
         <PostOperations post={post} />
-      </div>
-      <div className="flex items-center gap-6 text-sm text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <Eye className="h-4 w-4" />
-          <span>{post.viewCount}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <ThumbsUp className="h-4 w-4" />
-          <span>{post.likesCount || 0}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <MessageSquare className="h-4 w-4" />
-          <span>{post.commentsCount || 0}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Bookmark className="h-4 w-4" />
-          <span>{post.bookmarksCount || 0}</span>
-        </div>
       </div>
     </div>
   );

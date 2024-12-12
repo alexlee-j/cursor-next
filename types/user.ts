@@ -3,18 +3,17 @@ import { JsonValue } from "@prisma/client/runtime/library";
 export interface Permission {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
 }
 
 export interface Role {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   permissions: Permission[];
 }
 
 export interface UserRole {
-  id: string;
   userId: string;
   roleId: string;
   role: Role;
@@ -39,6 +38,6 @@ export interface AuthUser {
   bio: string | null;
   website: string | null;
   location: string | null;
-  socialLinks: JsonValue;
+  socialLinks: JsonValue | null;
   userRoles: UserRole[];
 }

@@ -22,7 +22,7 @@ export default async function PostsPage(
 
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
-        where: { authorId: user.id },
+        where: { authorId: user?.id },
         orderBy: orderBy === "latest" ? { createdAt: "desc" } : { viewCount: "desc" },
         skip: (page - 1) * POSTS_PER_PAGE,
         take: POSTS_PER_PAGE,
@@ -61,7 +61,7 @@ export default async function PostsPage(
         },
       }),
       prisma.post.count({
-        where: { authorId: user.id },
+        where: { authorId: user?.id },
       }),
     ]);
 
@@ -69,7 +69,7 @@ export default async function PostsPage(
       id: post.id,
       title: post.title,
       excerpt: post.excerpt,
-      createdAt: post.createdAt.toISOString(),
+      createdAt: post.createdAt,
       author: post.author,
       tags: post.postTags.map((pt) => pt.tag),
       commentsCount: post._count.comments,

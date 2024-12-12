@@ -27,12 +27,14 @@ interface FavoriteDialogProps {
     isFavorited: boolean;
   }[];
   initialCount: number;
+  isFavorited: boolean;
 }
 
 export function FavoriteDialog({
   postId,
   initialFolders,
   initialCount,
+  isFavorited,
 }: FavoriteDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [folders, setFolders] = useState(initialFolders || []);
@@ -41,7 +43,7 @@ export function FavoriteDialog({
   const [newFolder, setNewFolder] = useState({ name: "", description: "" });
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
-  const { setIsFavorited, setFavoritesCount, isFavorited: globalIsFavorited, favoritesCount } = usePostActions();
+  const { setIsFavorited, setFavoritesCount, favoritesCount } = usePostActions();
 
   const filteredFolders = folders.filter(folder => 
     folder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -175,14 +177,14 @@ export function FavoriteDialog({
           variant="ghost"
           size="sm"
           className={`inline-flex items-center space-x-1 px-2 py-1 text-sm rounded-md transition-colors ${
-            globalIsFavorited
+            isFavorited
               ? "text-yellow-500"
               : "text-muted-foreground hover:text-yellow-500/80"
           }`}
         >
           <Bookmark
             className={`h-4 w-4 ${
-              globalIsFavorited
+              isFavorited
                 ? "fill-yellow-500 text-yellow-500"
                 : "hover:text-yellow-500/80"
             }`}

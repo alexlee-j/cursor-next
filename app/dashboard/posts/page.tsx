@@ -29,7 +29,17 @@ export default async function PostsPage() {
         where,
         take: POSTS_PER_PAGE,
         orderBy: { updatedAt: "desc" },
-        include: {
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          excerpt: true,
+          type: true,
+          status: true,
+          authorId: true,
+          createdAt: true,
+          updatedAt: true,
+          viewCount: true,
           author: {
             select: {
               id: true,
@@ -42,13 +52,9 @@ export default async function PostsPage() {
               tag: true,
             },
           },
-          _count: {
-            select: {
-              comments: true,
-              likes: true,
-              favorites: true,
-            },
-          },
+          likes: true,
+          comments: true,
+          favorites: true,
         },
       }),
       prisma.post.count({ where }),
@@ -59,19 +65,21 @@ export default async function PostsPage() {
       title: post.title,
       content: post.content,
       excerpt: post.excerpt,
+      type: post.type,
       status: post.status,
       authorId: post.authorId,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       author: {
-        name: post.author.name,
+        id: post.author.id,
+        name: post.author.name || undefined,
         email: post.author.email,
       },
       tags: post.postTags.map((pt) => pt.tag),
-      commentsCount: post._count.comments,
-      likesCount: post._count.likes,
-      favoritesCount: post._count.favorites,
-      viewCount: 0,
+      commentsCount: post.comments.length,
+      likesCount: post.likes.length,
+      favoritesCount: post.favorites.length,
+      viewCount: post.viewCount,
     }));
 
     const totalPages = Math.ceil(total / POSTS_PER_PAGE);

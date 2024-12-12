@@ -9,8 +9,8 @@ import { AuthUser } from "@/types/user";
 export const authOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   session: {
@@ -51,20 +51,22 @@ export async function checkAuth(required = false): Promise<AuthUser | null> {
       });
 
       const user = await prisma.user.findUnique({
-        where: {
-          id: decoded.id,
-        },
+        where: { id: decoded.id },
         include: {
           userRoles: {
             include: {
               role: {
                 include: {
-                  permissions: true
-                }
-              }
-            }
-          }
-        }
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -86,11 +88,37 @@ export async function checkAuth(required = false): Promise<AuthUser | null> {
         roles: user.userRoles.map((r) => r.role.name),
       });
 
-      let userWithAvatar = { ...user };
-      if (user.avatar) {
-        const avatarBase64 = Buffer.from(user.avatar).toString("base64");
-        userWithAvatar.avatar = `data:image/webp;base64,${avatarBase64}`;
-      }
+      const userWithAvatar: AuthUser = {
+        id: user.id,
+        email: user.email,
+        password: user.password,
+        name: user.name,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        commentCount: user.commentCount,
+        approvedCount: user.approvedCount,
+        lastCommentAt: user.lastCommentAt,
+        trustLevel: user.trustLevel,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorSecret: user.twoFactorSecret,
+        bio: user.bio,
+        website: user.website,
+        location: user.location,
+        socialLinks: user.socialLinks,
+        avatar: user.avatar ? `data:image/webp;base64,${Buffer.from(user.avatar).toString("base64")}` : null,
+        userRoles: user.userRoles.map(ur => ({
+          userId: ur.userId,
+          roleId: ur.roleId,
+          role: {
+            id: ur.role.id,
+            name: ur.role.name,
+            description: ur.role.description || null,
+            permissions: ur.role.rolePermissions.map(rp => rp.permission),
+          },
+        })),
+      };
 
       return userWithAvatar;
     } catch (verifyError) {

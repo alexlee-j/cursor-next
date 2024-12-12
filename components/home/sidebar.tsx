@@ -74,8 +74,8 @@ export function Sidebar({
                 {currentUser && currentUser.id !== author.id && (
                   <FollowButton
                     authorId={author.id}
-                    initialIsFollowing={false}
-                    initialCount={author.followersCount}
+                    isFollowing={false}
+                    followersCount={author.followersCount}
                   />
                 )}
               </div>

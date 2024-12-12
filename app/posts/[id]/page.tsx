@@ -412,7 +412,7 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
                   </span>
                   {!isAuthor && (
                     <FollowButton
-                      userId={post.authorId}
+                    authorId={post.authorId}
                       isFollowing={isFollowing}
                       followersCount={followersCount}
                     />

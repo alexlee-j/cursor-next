@@ -147,6 +147,8 @@ model Post {
   status      PostStatus @default(DRAFT)
   excerpt     String?    @db.Text
   viewCount   Int        @default(0)
+  likesCount  Int        @default(0)
+  favoritesCount Int     @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   authorId    String

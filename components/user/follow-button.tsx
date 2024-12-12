@@ -6,13 +6,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { Loader2, UserPlus, UserCheck } from "lucide-react";
 
 interface FollowButtonProps {
-  userId: string;
+  authorId: string;
   isFollowing: boolean;
   followersCount: number;
 }
 
 export function FollowButton({
-  userId,
+  authorId,
   isFollowing: initialIsFollowing,
   followersCount: initialCount,
 }: FollowButtonProps) {
@@ -25,7 +25,7 @@ export function FollowButton({
   const toggleFollow = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/users/${userId}/follow`, {
+      const response = await fetch(`/api/users/${authorId}/follow`, {
         method: "POST",
       });
 

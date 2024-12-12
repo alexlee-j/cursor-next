@@ -168,7 +168,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                 />
               ) : (
                 <div className="w-[100px] h-[100px] rounded-full bg-muted flex items-center justify-center">
-                  <Icons.UserIcon className="w-12 h-12 text-muted-foreground" />
+                  <Icons.userIcon className="w-12 h-12 text-muted-foreground" />
                 </div>
               )}
               <div className="flex-1">
@@ -176,7 +176,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                   <CardTitle className="text-2xl mb-2">{user.name}</CardTitle>
                   {currentUser && currentUser.id !== user.id && (
                     <FollowButton
-                      userId={user.id}
+                      authorId={user.id}
                       isFollowing={user.isFollowing}
                       followersCount={user.followersCount}
                     />

@@ -68,10 +68,7 @@ export function PostEditor({ post }: PostEditorProps) {
     },
   });
 
-  const onSubmit = async (
-    data: PostFormValues,
-    status: "DRAFT" | "PUBLISHED"
-  ) => {
+  const onSubmit = async (data: PostFormValues) => {
     try {
       setIsSubmitting(true);
 
@@ -92,7 +89,7 @@ export function PostEditor({ post }: PostEditorProps) {
         ...data,
         content: cleanContent,
         type: editorType,
-        status,
+        status: "PUBLISHED", // 默认发布状态
         tags: selectedTags,
       };
 
@@ -114,7 +111,7 @@ export function PostEditor({ post }: PostEditorProps) {
 
       toast({
         title: post?.id ? "更新成功" : "发布成功",
-        description: status === "PUBLISHED" ? "文章已发布" : "文章已保存为草稿",
+        description: "文章已发布",
       });
 
       router.push("/dashboard/posts");
@@ -209,7 +206,7 @@ export function PostEditor({ post }: PostEditorProps) {
               />
             </TabsContent>
             <TabsContent value="preview">
-              <Preview content={content} />
+              <Preview content={content} type={editorType} />
             </TabsContent>
           </Tabs>
         </div>
@@ -226,7 +223,13 @@ export function PostEditor({ post }: PostEditorProps) {
           <Button
             type="button"
             onClick={() => {
-              form.handleSubmit((data) => onSubmit(data, "DRAFT"))();
+              form.handleSubmit((data) => {
+                const formData = {
+                  ...data,
+                  status: "DRAFT",
+                };
+                onSubmit(formData);
+              })();
             }}
             disabled={isSubmitting}
           >
@@ -235,9 +238,7 @@ export function PostEditor({ post }: PostEditorProps) {
           <Button
             type="button"
             variant="default"
-            onClick={() => {
-              form.handleSubmit((data) => onSubmit(data, "PUBLISHED"))();
-            }}
+            onClick={form.handleSubmit(onSubmit)}
             disabled={isSubmitting}
           >
             发布

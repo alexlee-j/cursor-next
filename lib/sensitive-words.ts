@@ -1,5 +1,5 @@
 // 分类存放敏感词
-export const sensitiveWords = {
+export const sensitiveWords: Record<string, readonly string[]> = {
   spam: [
     "广告",
     "优惠",

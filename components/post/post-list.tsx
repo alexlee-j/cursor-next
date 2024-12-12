@@ -10,13 +10,22 @@ import { useEffect, useState, useCallback } from "react";
 interface Post {
   id: string;
   title: string;
+  type: string;
+  content: string;
+  excerpt: string | null;
   status: "DRAFT" | "PUBLISHED";
   createdAt: Date;
   updatedAt: Date;
   viewCount: number;
-  likesCount?: number;
+  likesCount: number;
+  favoritesCount: number;
+  authorId: string;
+  author: {
+    id: string;
+    name?: string;
+    email?: string;
+  };
   commentsCount?: number;
-  bookmarksCount?: number;
 }
 
 interface PostListProps {

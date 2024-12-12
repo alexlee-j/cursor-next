@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   eslint: {
     // 忽略ESLint检查
     ignoreDuringBuilds: true
-}
+},
+  reactStrictMode: true,
 };
 
 export default nextConfig;

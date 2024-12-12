@@ -17,9 +17,6 @@ export default defineConfig({
     video: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  env: {
-    dotenv: ['.env'],
-  },
   projects: [
     {
       name: 'chromium',

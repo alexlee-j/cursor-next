@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { verifyEmail } from "./actions";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -52,7 +52,7 @@ export default function VerifyEmailPage() {
     return (
       <div className="container flex h-screen items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">验证失败</h1>
+          <h1 className="text-2xl font-bold text-destructive">验证失败</h1>
           <p className="mt-2 text-muted-foreground">{error}</p>
           <button
             onClick={() => router.push("/login")}
@@ -68,11 +68,28 @@ export default function VerifyEmailPage() {
   return (
     <div className="container flex h-screen items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">验证成功</h1>
+        <h1 className="text-2xl font-bold text-primary">验证成功</h1>
         <p className="mt-2 text-muted-foreground">
-          您的邮箱已验证，正在跳转到登录页面...
+          您的邮箱已验证成功，即将跳转到登录页面...
         </p>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container flex h-screen items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">加载中...</h1>
+            <p className="mt-2 text-muted-foreground">请稍候</p>
+          </div>
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

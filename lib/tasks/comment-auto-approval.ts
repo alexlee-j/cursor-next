@@ -16,6 +16,7 @@ export async function autoApproveComments() {
       include: {
         user: {
           select: {
+            id: true,
             trustLevel: true,
             commentCount: true,
             approvedCount: true,
