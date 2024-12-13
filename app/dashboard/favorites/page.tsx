@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "管理您的收藏夹和收藏",
 };
 
+export const dynamic = 'force-dynamic';
+
 async function getFolders(userId: string) {
   const folders = await prisma.favoriteFolder.findMany({
     where: { userId },

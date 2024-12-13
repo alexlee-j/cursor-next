@@ -38,6 +38,8 @@ async function getPost(id: string) {
   };
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function PostPage({ params }: PostPageProps) {
   const user = await checkAuth();
   if (!user) {

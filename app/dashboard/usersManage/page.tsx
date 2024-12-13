@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "管理系统用户",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function UsersManagePage() {
   const user = await checkAuth() as AuthUser;
 

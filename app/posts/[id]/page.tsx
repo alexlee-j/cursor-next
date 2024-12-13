@@ -142,10 +142,8 @@ async function getPost(
         },
         comments: {
           where: {
-            AND: [
-              { status: "APPROVED" },
-              { parentId: null }, // 只获取顶层评论
-            ],
+            status: "APPROVED",
+            parentId: null, // 只获取顶级评论
           },
           orderBy: {
             createdAt: "desc",
@@ -160,10 +158,7 @@ async function getPost(
             },
             replies: {
               where: {
-                AND: [
-                  { status: "APPROVED" },
-                  { parentId: { not: null } }, // 确保是二级评论
-                ],
+                status: "APPROVED",
               },
               include: {
                 user: {
@@ -180,9 +175,6 @@ async function getPost(
                     email: true,
                   },
                 },
-              },
-              orderBy: {
-                createdAt: "asc",
               },
             },
           },

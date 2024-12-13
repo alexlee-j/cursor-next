@@ -13,6 +13,8 @@ interface PostTag {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function EditPostPage(
   props: {
     params: Promise<{ id: string }>;

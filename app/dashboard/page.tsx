@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "查看您的博客数据概览和最近的活动。",
 };
 
+export const dynamic = 'force-dynamic';
+
 interface DashboardData {
   totalPosts: number;
   draftPosts: number;

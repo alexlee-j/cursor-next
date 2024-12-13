@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   description: "查看收藏夹内容",
 };
 
+export const dynamic = 'force-dynamic';
+
 const POSTS_PER_PAGE = 10;
 
 async function getFolderPosts(

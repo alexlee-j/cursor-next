@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   description: "管理您收到的评论",
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function CommentsPage() {
   const user = await checkAuth();
 

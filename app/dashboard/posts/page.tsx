@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "创建和管理您的博客文章。",
 };
 
+export const dynamic = 'force-dynamic';
+
 const POSTS_PER_PAGE = 10;
 
 export default async function PostsPage() {

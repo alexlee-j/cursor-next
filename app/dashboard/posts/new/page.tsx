@@ -4,6 +4,8 @@ import { PostEditor } from "@/components/post/post-editor";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewPostPage() {
   const user = await checkAuth();
   if (!user) {

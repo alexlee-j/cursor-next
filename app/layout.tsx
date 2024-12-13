@@ -4,12 +4,9 @@ import "./globals.css";
 import "@/styles/theme-transition.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { initializeRolesAndPermissions } from "@/lib/init-permissions";
+import { initializeRolePermissions } from "@/lib/init-permissions";
 
 const inter = Inter({ subsets: ["latin"] });
-
-// 确保角色和权限已初始化
-initializeRolesAndPermissions().catch(console.error);
 
 export const metadata: Metadata = {
   title: "博客系统",
@@ -21,17 +18,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  initializeRolePermissions().catch(console.error);
+
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange={false}
-          storageKey="blog-theme"
-          forcedTheme={undefined}
-          themes={["light", "dark", "system"]}
+          disableTransitionOnChange
         >
           <div 
             className="relative min-h-screen bg-background font-sans antialiased"
