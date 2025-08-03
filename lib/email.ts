@@ -2,9 +2,11 @@ import nodemailer from "nodemailer";
 
 // 创建 SMTP 传输对象
 const transporter = nodemailer.createTransport({
-  service: "QQ", // 使用内置的 QQ 服务配置
+  host: process.env.SMTP_HOST, // QQ邮箱SMTP服务器地址
+  port: 465, // QQ邮箱SMTP服务器端口
+  secure: true, // 使用SSL
   auth: {
-    user: process.env.SMTP_USER,
+    user: process.env.SMTP_USER, // 确保使用环境变量
     pass: process.env.SMTP_PASSWORD, // QQ邮箱的授权码
   },
   tls: {
