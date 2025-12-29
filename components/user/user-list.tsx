@@ -110,11 +110,11 @@ export function UserList() {
         fetchUsers();
       }, 500)
     );
-  }, [search, status]);
+  }, [search, status, fetchUsers, searchDebounce]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page]);
+  }, [page, fetchUsers]);
 
   const handleStatusChange = async (userId: string, isActive: boolean) => {
     setConfirmDialog({

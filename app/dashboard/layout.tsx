@@ -43,7 +43,7 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  let userWithAvatar = {
+  const userWithAvatar = {
     id: fullUser.id,
     name: fullUser.name,
     email: fullUser.email,

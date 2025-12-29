@@ -60,7 +60,7 @@ export function LoginForm() {
         });
       }
     }
-  }, [showCaptcha]);
+  }, [showCaptcha, toast]);
 
   const reloadCaptcha = () => {
     if (!isCaptchaReady) {

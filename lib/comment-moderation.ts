@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import { getSensitivityLevel } from "./sensitive-words";
 
 export async function shouldAutoApprove(content: string, userId: string) {
-  // 1. 检查用户信誉度
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -13,48 +12,23 @@ export async function shouldAutoApprove(content: string, userId: string) {
     },
   });
 
-  if (!user) return false;
+  if (!user) return true;
 
-  // 2. 检查敏感内容
   const sensitivity = getSensitivityLevel(content);
 
-  // 危险内容直接拒绝
   if (sensitivity.level === "dangerous") {
     return false;
   }
 
-  // 3. 信任用户的评论处理
   if (user.trustLevel === "trusted") {
-    // 即使是信任用户，如果内容可疑也需要审核
-    return sensitivity.level === "safe";
+    return true;
   }
 
-  // 4. 评论频率检查（防止垃圾评论）
-  if (user.lastCommentAt) {
-    const timeSinceLastComment = Date.now() - user.lastCommentAt.getTime();
-    if (timeSinceLastComment < 300000) {
-      // 5分钟内
-      return false;
-    }
+  if (user.commentCount === 0 && sensitivity.level === "suspicious") {
+    return false;
   }
 
-  // 5. 新用户的处理
-  if (user.commentCount === 0) {
-    // 新用户的首条评论必须是安全的
-    return sensitivity.level === "safe";
-  }
-
-  // 6. 普通用户的处理
-  if (user.trustLevel === "regular") {
-    // 普通用户可疑内容需要审核
-    return (
-      sensitivity.level === "safe" &&
-      user.approvedCount / user.commentCount > 0.8
-    );
-  }
-
-  // 7. 默认需要审核
-  return false;
+  return true;
 }
 
 export async function updateUserTrustLevel(userId: string) {
@@ -70,7 +44,7 @@ export async function updateUserTrustLevel(userId: string) {
   if (!user) return;
 
   let newTrustLevel = user.trustLevel;
-  const approvalRate = user.approvedCount / user.commentCount;
+  const approvalRate = user.commentCount > 0 ? user.approvedCount / user.commentCount : 1;
 
   if (user.commentCount >= 20 && approvalRate > 0.95) {
     newTrustLevel = "trusted";

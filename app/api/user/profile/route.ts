@@ -171,9 +171,9 @@ export async function PATCH(req: Request) {
       return new NextResponse("Invalid file type", { status: 400 });
     }
 
-    // 验证文件大小 (最大 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      return new NextResponse("File too large (max 2MB)", { status: 400 });
+    // 验证文件大小 (最大 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return new NextResponse("File too large (max 5MB)", { status: 400 });
     }
 
     // 读取文件数据

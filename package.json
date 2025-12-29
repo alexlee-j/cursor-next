@@ -8,13 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "sync-counts": "ts-node scripts/sync-counts.ts",
-    "create-default-folders": "cross-env ts-node --project tsconfig.scripts.json scripts/create-default-folders.ts",
-    "manage-roles": "ts-node --project tsconfig.scripts.json scripts/manage-roles.ts",
-    "init-tags": "ts-node --project tsconfig.scripts.json scripts/init-tags.ts",
-    "fix-permissions": "ts-node --project tsconfig.scripts.json scripts/fix-role-permissions.ts",
-    "init-app": "ts-node --project tsconfig.scripts.json scripts/init-app.ts",
-    "db:seed": "ts-node prisma/seed.ts",
+    "sync-counts": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/sync-counts.ts",
+    "create-default-folders": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/create-default-folders.ts",
+    "manage-roles": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/manage-roles.ts",
+    "init-tags": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/init-tags.ts",
+    "fix-permissions": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/fix-role-permissions.ts",
+    "init-app": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/init-app.ts",
+    "db:seed": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register prisma/seed.ts",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
   },
@@ -85,6 +85,8 @@
     "postcss": "^8",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
 }

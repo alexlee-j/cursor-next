@@ -69,6 +69,10 @@ export function PostEditor({ post }: PostEditorProps) {
   });
 
   const onSubmit = async (data: PostFormValues) => {
+    await submitPost(data, "PUBLISHED");
+  };
+
+  const submitPost = async (data: PostFormValues, status: "DRAFT" | "PUBLISHED") => {
     try {
       setIsSubmitting(true);
 
@@ -89,7 +93,7 @@ export function PostEditor({ post }: PostEditorProps) {
         ...data,
         content: cleanContent,
         type: editorType,
-        status: "PUBLISHED", // 默认发布状态
+        status,
         tags: selectedTags,
       };
 
@@ -110,8 +114,8 @@ export function PostEditor({ post }: PostEditorProps) {
       }
 
       toast({
-        title: post?.id ? "更新成功" : "发布成功",
-        description: "文章已发布",
+        title: post?.id ? (status === "DRAFT" ? "草稿已保存" : "更新成功") : (status === "DRAFT" ? "草稿已保存" : "发布成功"),
+        description: status === "DRAFT" ? "草稿已保存到您的文章列表" : "文章已发布",
       });
 
       router.push("/dashboard/posts");
@@ -224,11 +228,7 @@ export function PostEditor({ post }: PostEditorProps) {
             type="button"
             onClick={() => {
               form.handleSubmit((data) => {
-                const formData = {
-                  ...data,
-                  status: "DRAFT",
-                };
-                onSubmit(formData);
+                submitPost(data, "DRAFT");
               })();
             }}
             disabled={isSubmitting}
@@ -238,7 +238,11 @@ export function PostEditor({ post }: PostEditorProps) {
           <Button
             type="button"
             variant="default"
-            onClick={form.handleSubmit(onSubmit)}
+            onClick={() => {
+              form.handleSubmit((data) => {
+                submitPost(data, "PUBLISHED");
+              })();
+            }}
             disabled={isSubmitting}
           >
             发布

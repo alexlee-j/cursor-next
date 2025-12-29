@@ -40,6 +40,7 @@ export function PostOperations({ post }: PostOperationsProps) {
   const { toast } = useToast();
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [isPublishLoading, setIsPublishLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const handleEdit = useCallback((event: Event) => {
@@ -59,6 +60,45 @@ export function PostOperations({ post }: PostOperationsProps) {
     setIsOpen(false);
     setShowDeleteAlert(true);
   }, []);
+
+  const handlePublish = useCallback((event: Event) => {
+    event.preventDefault();
+    setIsOpen(false);
+    publishPost();
+  }, []);
+
+  async function publishPost() {
+    try {
+      setIsPublishLoading(true);
+      const response = await fetch(`/api/posts/${post.id}/publish`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "发布失败");
+      }
+
+      toast({
+        description: "文章已发布",
+      });
+
+      router.refresh();
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        variant: "destructive",
+        description: error.message || "发布文章时出错",
+      });
+    } finally {
+      setIsPublishLoading(false);
+      setIsOpen(false);
+    }
+  }
 
   async function deletePost() {
     try {
@@ -131,6 +171,22 @@ export function PostOperations({ post }: PostOperationsProps) {
           >
             查看
           </DropdownMenuItem>
+          {post.status === "DRAFT" && (
+            <DropdownMenuItem
+              className="cursor-pointer select-none text-green-600 focus:bg-green-50 focus:text-green-600"
+              onSelect={handlePublish}
+              disabled={isPublishLoading}
+            >
+              {isPublishLoading ? (
+                <>
+                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                  发布中...
+                </>
+              ) : (
+                "发布"
+              )}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer select-none text-red-600 focus:bg-red-50 focus:text-red-600"

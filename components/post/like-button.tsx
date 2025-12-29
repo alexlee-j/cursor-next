@@ -18,10 +18,8 @@ export function LikeButton({
   initialCount,
 }: LikeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [liked, setLiked] = useState(initialLiked);
-  const [likesCount, setLikesCount] = useState(initialCount);
+  const { liked, likesCount, setLiked, setLikesCount } = usePostActions();
   const { toast } = useToast();
-  const { setLiked: setLikedContext, setLikesCount: setLikesCountContext } = usePostActions();
 
   const toggleLike = async () => {
     try {

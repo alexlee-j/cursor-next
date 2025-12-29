@@ -12,6 +12,7 @@ import { MessageSquare } from "lucide-react";
 import { QuickActions } from "@/components/post/quick-actions";
 import { FollowButton } from "@/components/user/follow-button";
 import { PostActionsProvider } from "@/components/post/post-actions-context";
+import { FollowProvider } from "@/components/user/follow-context";
 
 type Comment = {
   id: string;
@@ -52,6 +53,7 @@ type PostWithRelations = Post & {
     id: string;
     name: string | null;
     email: string;
+    image: string | null;
   };
   comments: {
     id: string;
@@ -138,6 +140,7 @@ async function getPost(
             id: true,
             name: true,
             email: true,
+            avatar: true,
           },
         },
         comments: {
@@ -314,15 +317,23 @@ async function getPost(
     });
 
     return {
-      post: {
-        ...postWithCounts,
-        tags: post.postTags.map((pt) => ({
-          id: pt.tag.id,
-          name: pt.tag.name,
-        })),
-        comments: commentsWithAuthorFlag,
-        excerpt: post.excerpt || "", // 确保类型为 string
-      },
+        post: {
+          ...postWithCounts,
+          author: {
+            id: postWithCounts.author.id,
+            name: postWithCounts.author.name,
+            email: postWithCounts.author.email,
+            image: postWithCounts.author.avatar
+              ? `data:image/webp;base64,${Buffer.from(postWithCounts.author.avatar).toString("base64")}`
+              : null,
+          },
+          tags: post.postTags.map((pt) => ({
+            id: pt.tag.id,
+            name: pt.tag.name,
+          })),
+          comments: commentsWithAuthorFlag,
+          excerpt: post.excerpt || "",
+        },
       liked,
       favoriteFolders,
       isFollowing,
@@ -369,126 +380,130 @@ export default async function PostPage(props: { params: Promise<{ id: string }> 
 
     // 5. 渲染页面
     return (
-      <PostActionsProvider
-        initialLiked={liked}
-        initialLikesCount={post.likesCount}
-        initialIsFavorited={favoriteFolders.some(
-          (folder) => folder.isFavorited
-        )}
-        initialFavoritesCount={post.favoritesCount}
+      <FollowProvider
+        initialIsFollowing={isFollowing}
+        initialFollowersCount={followersCount}
+        authorId={post.authorId}
       >
-        <div className="container relative max-w-3xl py-6 lg:py-12">
-          <article className="prose prose-quoteless prose-neutral dark:prose-invert mx-auto">
-            {/* 文章标题 */}
-            <div className="not-prose mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-                <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
-                {isDraft && <Badge variant="secondary">草稿</Badge>}
-              </div>
-              {post.excerpt && (
-                <p className="text-lg text-muted-foreground mt-2">{post.excerpt}</p>
-              )}
-              {post.postTags?.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {post.postTags.map((tag) => (
-                    <Badge key={tag.tag.id} variant="secondary">
-                      {tag.tag.name}
-                    </Badge>
-                  ))}
+        <PostActionsProvider
+          initialLiked={liked}
+          initialLikesCount={post.likesCount}
+          initialIsFavorited={favoriteFolders.some(
+            (folder) => folder.isFavorited
+          )}
+          initialFavoritesCount={post.favoritesCount}
+        >
+          <div className="container relative max-w-3xl py-6 lg:py-12">
+            <article className="prose prose-quoteless prose-neutral dark:prose-invert mx-auto">
+              {/* 文章标题 */}
+              <div className="not-prose mb-8">
+                <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+                  <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
+                  {isDraft && <Badge variant="secondary">草稿</Badge>}
                 </div>
-              )}
-              <div className="mt-4 flex flex-col space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-muted-foreground">
-                    作者：{post.author.name || post.author.email}
-                  </span>
-                  {!isAuthor && (
-                    <FollowButton
-                    authorId={post.authorId}
-                      isFollowing={isFollowing}
-                      followersCount={followersCount}
-                    />
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <time dateTime={post.createdAt.toISOString()}>
-                    发布于：{formatDate(post.createdAt)}
-                  </time>
-                  {post.updatedAt > post.createdAt && (
-                    <time dateTime={post.updatedAt.toISOString()}>
-                      更新于：{formatDate(post.updatedAt)}
-                    </time>
-                  )}
-                  <div>
-                    浏览：{isDraft ? post.viewCount : post.viewCount + 1}
+                {post.excerpt && (
+                  <p className="text-lg text-muted-foreground mt-2">{post.excerpt}</p>
+                )}
+                {post.postTags?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {post.postTags.map((tag) => (
+                      <Badge key={tag.tag.id} variant="secondary">
+                        {tag.tag.name}
+                      </Badge>
+                    ))}
                   </div>
-                  {!isDraft && (
-                    <div className="flex items-center gap-4">
-                      <LikeButton
-                        postId={post.id}
-                        initialLiked={liked}
-                        initialCount={post.likesCount}
+                )}
+                <div className="mt-4 flex flex-col space-y-4">
+                  <div className="flex items-center gap-4">
+                    <span className="text-muted-foreground">
+                      作者：{post.author.name || post.author.email}
+                    </span>
+                    {!isAuthor && (
+                      <FollowButton
+                        authorId={post.authorId}
+                        isFollowing={isFollowing}
+                        followersCount={followersCount}
                       />
-                      <FavoriteDialog
-                        postId={post.id}
-                        initialFolders={favoriteFolders}
-                        initialCount={post.favoritesCount}
-                        isFavorited={favoriteFolders.some(
-                          (folder) => folder.isFavorited
-                        )}
-                      />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <time dateTime={post.createdAt.toISOString()}>
+                      发布于：{formatDate(post.createdAt)}
+                    </time>
+                    {post.updatedAt > post.createdAt && (
+                      <time dateTime={post.updatedAt.toISOString()}>
+                        更新于：{formatDate(post.updatedAt)}
+                      </time>
+                    )}
+                    <div>
+                      浏览：{isDraft ? post.viewCount : post.viewCount + 1}
                     </div>
-                  )}
+                    {!isDraft && (
+                      <div className="flex items-center gap-4">
+                        <LikeButton
+                          postId={post.id}
+                          initialLiked={liked}
+                          initialCount={post.likesCount}
+                        />
+                        <FavoriteDialog
+                          postId={post.id}
+                          initialFolders={favoriteFolders}
+                          initialCount={post.favoritesCount}
+                          isFavorited={favoriteFolders.some(
+                            (folder) => folder.isFavorited
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* 文章内容 */}
+              <div
+                className={
+                  post.type === "markdown"
+                    ? "markdown-content"
+                    : "wysiwyg-content"
+                }
+                dangerouslySetInnerHTML={{
+                  __html: post.content,
+                }}
+              />
+
+              {/* 评论区 */}
+              <div id="comments-section" className="not-prose mt-8">
+                {!isDraft && (
+                  <Comments
+                    postId={post.id}
+                    initialComments={post.comments}
+                    isLoggedIn={!!user}
+                  />
+                )}
+                {isDraft && !isAuthor && (
+                  <div className="mt-12 text-center text-muted-foreground">
+                    <p>草稿状态下不支持评论、点赞和收藏功能</p>
+                  </div>
+                )}
+              </div>
+            </article>
+
+            {/* 快捷操作栏 */}
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-background shadow-[0_-2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] lg:shadow-none lg:bottom-auto lg:left-auto lg:right-[max(0px,calc(50%-45rem))] lg:top-1/2 lg:-translate-y-1/2 lg:bg-transparent">
+              <QuickActions
+                postId={post.id}
+                liked={liked}
+                likesCount={post.likesCount}
+                favoriteFolders={favoriteFolders}
+                favoritesCount={post.favoritesCount}
+                commentsCount={post.comments.length}
+                className="mx-auto max-w-3xl lg:mx-0"
+                author={post.author}
+              />
             </div>
-
-            {/* 文章内容 */}
-            <div
-              className={
-                post.type === "markdown"
-                  ? "markdown-content"
-                  : "wysiwyg-content"
-              }
-              dangerouslySetInnerHTML={{
-                __html: post.content,
-              }}
-            />
-
-            {/* 评论区 */}
-            <div id="comments-section" className="not-prose mt-8">
-              {!isDraft && (
-                <Comments
-                  postId={post.id}
-                  initialComments={post.comments}
-                  isLoggedIn={!!user}
-                />
-              )}
-              {isDraft && !isAuthor && (
-                <div className="mt-12 text-center text-muted-foreground">
-                  <p>草稿状态下不支持评论、点赞和收藏功能</p>
-                </div>
-              )}
-            </div>
-          </article>
-
-          {/* 快捷操作栏 */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background shadow-[0_-2px_10px_rgba(0,0,0,0.1)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] lg:shadow-none lg:bottom-auto lg:left-auto lg:right-[max(0px,calc(50%-45rem))] lg:top-1/2 lg:-translate-y-1/2 lg:bg-transparent">
-            <QuickActions
-              postId={post.id}
-              liked={liked}
-              likesCount={post.likesCount}
-              favoriteFolders={favoriteFolders}
-              favoritesCount={post.favoritesCount}
-              commentsCount={post.comments.length}
-              className="mx-auto max-w-3xl lg:mx-0"
-              author={post.author}
-              isFollowing={isFollowing}
-              followersCount={followersCount}
-            />
           </div>
-        </div>
-      </PostActionsProvider>
+        </PostActionsProvider>
+      </FollowProvider>
     );
   } catch (error) {
     console.error("Error rendering post page:", error);

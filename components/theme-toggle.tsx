@@ -15,40 +15,30 @@ export function ThemeToggle() {
   const { setTheme, theme, resolvedTheme } = useTheme();
 
   const handleThemeChange = (newTheme: string) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    // 如果切换到当前主题，直接返回
     const currentTheme = resolvedTheme || theme;
     if (currentTheme === newTheme) return;
 
-    // 移除之前可能存在的overlay
-    const existingOverlay = document.querySelector('.theme-transition-overlay');
-    if (existingOverlay) {
-      existingOverlay.remove();
-    }
-
-    // 创建新的overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'theme-transition-overlay';
-
+    const overlay = document.createElement("div");
+    overlay.className = "theme-transition-overlay";
+    overlay.style.backgroundColor = newTheme === "dark" ? "#0a0a0a" : "#ffffff";
     document.body.appendChild(overlay);
 
-    // 强制重绘
-    overlay.getBoundingClientRect();
-
-    // 触发动画
     requestAnimationFrame(() => {
-      overlay.classList.add('active');
+      overlay.classList.add("active");
     });
 
-    // 在动画进行到一半时切换主题
     setTimeout(() => {
       setTheme(newTheme);
-      // 等待主题完全应用后再移除 overlay
+    }, 100);
+
+    setTimeout(() => {
+      overlay.classList.add("fade-out");
       setTimeout(() => {
         overlay.remove();
-      }, 50);
-    }, 250);
+      }, 150);
+    }, 200);
   };
 
   return (

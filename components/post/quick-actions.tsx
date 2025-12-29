@@ -6,6 +6,7 @@ import { MessageSquare, UserCheck, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { useFollow } from "@/components/user/follow-context";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -30,8 +31,8 @@ interface QuickActionsProps {
     email: string;
     image?: string | null;
   };
-  isFollowing: boolean;
-  followersCount: number;
+  isFollowing?: boolean;
+  followersCount?: number;
 }
 
 export function QuickActions({
@@ -43,10 +44,8 @@ export function QuickActions({
   commentsCount,
   className,
   author,
-  isFollowing: initialIsFollowing,
-  followersCount: initialFollowersCount,
 }: QuickActionsProps) {
-  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const { isFollowing, followersCount, setIsFollowing } = useFollow();
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -120,7 +119,7 @@ export function QuickActions({
               disabled={isLoading}
               className="h-7 text-xs whitespace-nowrap"
             >
-              {isFollowing ? "已关注" : "关注"} ({initialFollowersCount})
+              {isFollowing ? "已关注" : "关注"} ({followersCount})
             </Button>
           </div>
         </div>

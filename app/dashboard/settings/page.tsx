@@ -88,7 +88,7 @@ export default function SettingsPage() {
       }
     };
     fetchProfile();
-  }, []);
+  }, [toast]);
 
   // 处理输入变化
   const handleInputChange = (
@@ -113,10 +113,10 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "文件太大",
-        description: "请上传小于2MB的文件",
+        description: "请上传小于5MB的文件",
         variant: "destructive",
       });
       return;
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                       disabled={loading}
                     />
                     <p className="text-xs text-muted-foreground">
-                      支持 JPG、PNG 格式，文件大小不超过 2MB
+                      支持 JPG、PNG 格式，文件大小不超过 5MB
                     </p>
                   </div>
                 </div>

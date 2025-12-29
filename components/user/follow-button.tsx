@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, UserPlus, UserCheck } from "lucide-react";
+import { useFollow } from "./follow-context";
 
 interface FollowButtonProps {
   authorId: string;
@@ -16,8 +17,7 @@ export function FollowButton({
   isFollowing: initialIsFollowing,
   followersCount: initialCount,
 }: FollowButtonProps) {
-  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
-  const [count, setCount] = useState(initialCount);
+  const { isFollowing, followersCount, setIsFollowing, setFollowersCount } = useFollow();
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { toast } = useToast();
@@ -45,7 +45,7 @@ export function FollowButton({
 
       const { isFollowing: newIsFollowing } = await response.json();
       setIsFollowing(newIsFollowing);
-      setCount((prev) => (newIsFollowing ? prev + 1 : prev - 1));
+      setFollowersCount((prev) => (newIsFollowing ? prev + 1 : prev - 1));
 
       toast({
         title: newIsFollowing ? "关注成功" : "取消关注成功",
@@ -97,7 +97,7 @@ export function FollowButton({
           <span>关注</span>
         </>
       )}
-      <span className="text-xs opacity-80">({count})</span>
+      <span className="text-xs opacity-80">({followersCount})</span>
     </Button>
   );
 }

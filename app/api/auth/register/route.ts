@@ -61,6 +61,16 @@ export async function POST(request: Request) {
     });
 
     // 发送验证邮件
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL;
+    if (!baseUrl) {
+      await prisma.verifyToken.delete({ where: { id: verifyToken.id } });
+      await prisma.user.delete({ where: { id: user.id } });
+      return NextResponse.json(
+        { error: "服务器配置错误：缺少 APP_URL" },
+        { status: 500 }
+      );
+    }
+
     try {
       await mailer.sendVerificationEmail(email, token);
       logger.info("验证邮件发送成功", { userId: user.id, email });
@@ -70,6 +80,12 @@ export async function POST(request: Request) {
         userId: user.id,
         email,
       });
+      await prisma.verifyToken.delete({ where: { id: verifyToken.id } });
+      await prisma.user.delete({ where: { id: user.id } });
+      return NextResponse.json(
+        { error: "验证邮件发送失败，请稍后重试" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
